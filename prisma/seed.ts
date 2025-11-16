@@ -16,21 +16,57 @@ async function main() {
   await prisma.patient.deleteMany();
   await prisma.doctor.deleteMany();
   await prisma.clinicInfo.deleteMany();
+  await prisma.auditLog.deleteMany();
   await prisma.admin.deleteMany();
 
-  // Seed Admin User
+  // Seed Admin Users with different roles
   const passwordHash = await bcrypt.hash('admin123', 10);
-  const admin = await prisma.admin.create({
+
+  const superAdmin = await prisma.admin.create({
     data: {
-      username: 'admin',
-      email: 'admin@medicalbrothers.ru',
+      username: 'superadmin',
+      email: 'superadmin@medicalbrothers.ru',
       passwordHash,
-      fullName: 'Администратор Системы',
+      fullName: 'Супер Администратор',
       role: 'super_admin',
       isActive: true,
     },
   });
-  console.log(`✅ Created admin user: ${admin.username}`);
+
+  const adminUser = await prisma.admin.create({
+    data: {
+      username: 'admin',
+      email: 'admin@medicalbrothers.ru',
+      passwordHash,
+      fullName: 'Администратор Клиники',
+      role: 'admin',
+      isActive: true,
+    },
+  });
+
+  const registrarUser = await prisma.admin.create({
+    data: {
+      username: 'registrar',
+      email: 'registrar@medicalbrothers.ru',
+      passwordHash,
+      fullName: 'Регистратор Петрова',
+      role: 'registrar',
+      isActive: true,
+    },
+  });
+
+  const nurseUser = await prisma.admin.create({
+    data: {
+      username: 'nurse',
+      email: 'nurse@medicalbrothers.ru',
+      passwordHash,
+      fullName: 'Медсестра Иванова',
+      role: 'nurse',
+      isActive: true,
+    },
+  });
+
+  console.log(`✅ Created 4 admin users with different roles`);
 
   // Seed Doctors
   const doctors = await Promise.all([
@@ -129,6 +165,186 @@ async function main() {
   }
   await Promise.all(schedules);
   console.log(`✅ Created ${schedules.length} doctor schedules`);
+
+  // Create doctor admin accounts
+  const doctorAdmin = await prisma.admin.create({
+    data: {
+      username: 'doctor_ivanov',
+      email: 'doctor_ivanov@medicalbrothers.ru',
+      passwordHash,
+      fullName: doctors[0].name,
+      role: 'doctor',
+      doctorId: doctors[0].id,
+      isActive: true,
+    },
+  });
+  console.log(`✅ Created doctor admin account for ${doctorAdmin.fullName}`);
+
+  // Seed Patients with passwords for login
+  const patients = await Promise.all([
+    prisma.patient.create({
+      data: {
+        name: 'Алексей Иванов',
+        phone: '+79001234567',
+        email: 'patient1@example.com',
+        passwordHash,
+        dateOfBirth: new Date('1985-05-15'),
+        address: 'г. Москва, ул. Ленина, д. 10, кв. 5',
+        isActive: true,
+      },
+    }),
+    prisma.patient.create({
+      data: {
+        name: 'Мария Петрова',
+        phone: '+79001234568',
+        email: 'patient2@example.com',
+        passwordHash,
+        dateOfBirth: new Date('1990-08-20'),
+        address: 'г. Москва, ул. Пушкина, д. 25, кв. 12',
+        isActive: true,
+      },
+    }),
+    prisma.patient.create({
+      data: {
+        name: 'Сергей Сидоров',
+        phone: '+79001234569',
+        email: 'patient3@example.com',
+        passwordHash,
+        dateOfBirth: new Date('1978-12-10'),
+        address: 'г. Москва, пр-т Мира, д. 50, кв. 7',
+        isActive: true,
+      },
+    }),
+    prisma.patient.create({
+      data: {
+        name: 'Елена Николаева',
+        phone: '+79001234570',
+        email: 'patient4@example.com',
+        passwordHash,
+        dateOfBirth: new Date('1995-03-25'),
+        address: 'г. Москва, ул. Гагарина, д. 15, кв. 20',
+        isActive: true,
+      },
+    }),
+    prisma.patient.create({
+      data: {
+        name: 'Дмитрий Волков',
+        phone: '+79001234571',
+        email: 'patient5@example.com',
+        passwordHash,
+        dateOfBirth: new Date('1982-11-05'),
+        address: 'г. Москва, ул. Кирова, д. 8, кв. 3',
+        isActive: true,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${patients.length} patients`);
+
+  // Seed Time Slots for next 7 days
+  const timeSlots = [];
+  const today = new Date();
+  for (let day = 0; day < 7; day++) {
+    const slotDate = new Date(today);
+    slotDate.setDate(today.getDate() + day);
+
+    // Skip weekends (Saturday=6, Sunday=0)
+    if (slotDate.getDay() === 0 || slotDate.getDay() === 6) continue;
+
+    for (const doctor of doctors) {
+      // Create slots from 9:00 to 17:00, every 30 minutes
+      for (let hour = 9; hour < 17; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const slotTime = new Date('1970-01-01');
+          slotTime.setHours(hour, minute, 0, 0);
+
+          timeSlots.push(
+            prisma.timeSlot.create({
+              data: {
+                doctorId: doctor.id,
+                slotDate: slotDate,
+                slotTime: slotTime,
+                isBooked: false,
+                durationMinutes: 30,
+              },
+            })
+          );
+        }
+      }
+    }
+  }
+  await Promise.all(timeSlots);
+  console.log(`✅ Created ${timeSlots.length} time slots for next 7 days`);
+
+  // Seed Appointments
+  const allTimeSlots = await prisma.timeSlot.findMany({
+    take: 20, // Take first 20 slots for appointments
+  });
+
+  const appointments = await Promise.all(
+    allTimeSlots.slice(0, 15).map((slot, index) => {
+      const patient = patients[index % patients.length];
+      const statuses = ['scheduled', 'confirmed', 'completed', 'cancelled'];
+      const status = statuses[index % statuses.length];
+
+      return prisma.appointment.create({
+        data: {
+          patientId: patient.id,
+          doctorId: slot.doctorId,
+          timeSlotId: slot.id,
+          appointmentDate: slot.slotDate,
+          appointmentTime: slot.slotTime,
+          status: status,
+          symptoms: `Симптомы пациента ${index + 1}: головная боль, повышенная температура`,
+          notes: `Примечания врача для записи ${index + 1}`,
+        },
+      });
+    })
+  );
+  console.log(`✅ Created ${appointments.length} appointments`);
+
+  // Mark slots as booked
+  await prisma.timeSlot.updateMany({
+    where: {
+      id: {
+        in: allTimeSlots.slice(0, 15).map((slot) => slot.id),
+      },
+    },
+    data: {
+      isBooked: true,
+    },
+  });
+
+  // Seed Consultations
+  const consultations = await Promise.all([
+    prisma.consultation.create({
+      data: {
+        patientId: patients[0].id,
+        symptoms: 'Боль в груди, одышка',
+        aiResponse: 'Рекомендуется консультация кардиолога',
+        recommendedSpecialty: 'Кардиолог',
+        severityLevel: 'high',
+      },
+    }),
+    prisma.consultation.create({
+      data: {
+        patientId: patients[1].id,
+        symptoms: 'Головная боль, головокружение',
+        aiResponse: 'Рекомендуется консультация невролога',
+        recommendedSpecialty: 'Невролог',
+        severityLevel: 'medium',
+      },
+    }),
+    prisma.consultation.create({
+      data: {
+        patientId: patients[2].id,
+        symptoms: 'Высокая температура, кашель',
+        aiResponse: 'Рекомендуется консультация терапевта',
+        recommendedSpecialty: 'Терапевт',
+        severityLevel: 'medium',
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${consultations.length} consultations`);
 
   // Seed Clinic Info
   const clinicInfo = await Promise.all([

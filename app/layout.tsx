@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import PWAInstaller from '@/components/PWAInstaller';
+import PushNotificationManager from '@/components/PushNotificationManager';
 
 export const metadata: Metadata = {
   title: {
@@ -58,6 +59,7 @@ export default function RootLayout({
       <body className="antialiased">
         {children}
         <PWAInstaller />
+        <PushNotificationManager />
       </body>
     </html>
   );

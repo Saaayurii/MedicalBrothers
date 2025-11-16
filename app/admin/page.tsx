@@ -14,6 +14,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import Dashboard from '@/components/admin/Dashboard';
 import AppointmentsCalendar from '@/components/admin/AppointmentsCalendar';
 import RealTimeUpdater from '@/components/admin/RealTimeUpdater';
+import AdvancedAnalytics from '@/components/admin/AdvancedAnalytics';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
@@ -22,6 +23,7 @@ async function getAdminData() {
   // Return mock data during build or when DB is unavailable
   const mockData = {
     appointments: [],
+    allAppointments: [],
     doctors: [],
     emergencies: [],
     consultations: [],
@@ -39,7 +41,7 @@ async function getAdminData() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [appointments, doctors, emergencies, consultations, stats] = await Promise.all([
+    const [appointments, allAppointments, doctors, emergencies, consultations, stats] = await Promise.all([
       // Get upcoming appointments with relations
       prisma.appointment.findMany({
         where: {
@@ -56,6 +58,28 @@ async function getAdminData() {
           { appointmentTime: 'asc' },
         ],
         take: 20,
+      }),
+
+      // Get all appointments for analytics (last 60 days)
+      prisma.appointment.findMany({
+        where: {
+          appointmentDate: {
+            gte: new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000),
+          },
+        },
+        include: {
+          doctor: {
+            select: {
+              id: true,
+              name: true,
+              specialty: true,
+            },
+          },
+        },
+        orderBy: [
+          { appointmentDate: 'desc' },
+          { appointmentTime: 'desc' },
+        ],
       }),
 
       // Get all active doctors
@@ -136,6 +160,7 @@ async function getAdminData() {
 
     return {
       appointments,
+      allAppointments,
       doctors,
       emergencies,
       consultations,
@@ -169,6 +194,12 @@ async function AdminContent() {
 
       {/* Appointments Calendar */}
       <AppointmentsCalendar appointments={data.appointments} />
+
+      {/* Advanced Analytics */}
+      <div className="cyber-card p-6">
+        <h2 className="text-2xl font-bold mb-6 text-cyan-400">📊 Расширенная Аналитика</h2>
+        <AdvancedAnalytics appointments={data.allAppointments} />
+      </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
