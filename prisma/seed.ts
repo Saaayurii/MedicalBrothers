@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -15,6 +16,21 @@ async function main() {
   await prisma.patient.deleteMany();
   await prisma.doctor.deleteMany();
   await prisma.clinicInfo.deleteMany();
+  await prisma.admin.deleteMany();
+
+  // Seed Admin User
+  const passwordHash = await bcrypt.hash('admin123', 10);
+  const admin = await prisma.admin.create({
+    data: {
+      username: 'admin',
+      email: 'admin@medicalbrothers.ru',
+      passwordHash,
+      fullName: 'Администратор Системы',
+      role: 'super_admin',
+      isActive: true,
+    },
+  });
+  console.log(`✅ Created admin user: ${admin.username}`);
 
   // Seed Doctors
   const doctors = await Promise.all([
