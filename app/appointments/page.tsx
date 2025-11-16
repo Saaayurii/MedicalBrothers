@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { unstable_noStore as noStore } from 'next/cache';
+import AppointmentCard from '@/components/AppointmentCard';
 
 export default async function AppointmentsPage() {
   noStore();
@@ -76,63 +77,7 @@ export default async function AppointmentsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {appointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="cyber-card p-6 hover:border-cyan-400/50 transition-all"
-              >
-                {/* Статус */}
-                <div className="flex items-center justify-between mb-4">
-                  <StatusBadge status={appointment.status} />
-                  <span className="text-sm text-gray-500">#{appointment.id}</span>
-                </div>
-
-                {/* Врач */}
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold mb-1">{appointment.doctor.name}</h3>
-                  <p className="text-sm text-cyan-400">{appointment.doctor.specialty}</p>
-                </div>
-
-                {/* Дата и время */}
-                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-700">
-                  <div>
-                    <p className="text-xs text-gray-400">Дата</p>
-                    <p className="font-semibold">{formatDate(appointment.appointmentDate)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Время</p>
-                    <p className="font-semibold">{formatTime(appointment.appointmentTime)}</p>
-                  </div>
-                </div>
-
-                {/* Пациент */}
-                {appointment.patient && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-400">Пациент</p>
-                    <p className="font-semibold">{appointment.patient.name}</p>
-                    <p className="text-sm text-gray-500">{appointment.patient.phone}</p>
-                  </div>
-                )}
-
-                {/* Симптомы */}
-                {appointment.symptoms && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-400 mb-1">Причина визита</p>
-                    <p className="text-sm">{appointment.symptoms}</p>
-                  </div>
-                )}
-
-                {/* Действия */}
-                <div className="flex gap-2 mt-4">
-                  <button className="flex-1 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg text-sm transition-all">
-                    Подробнее
-                  </button>
-                  {appointment.status === 'scheduled' && (
-                    <button className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-sm transition-all">
-                      Отменить
-                    </button>
-                  )}
-                </div>
-              </div>
+              <AppointmentCard key={appointment.id} appointment={appointment} />
             ))}
           </div>
         )}
@@ -152,34 +97,4 @@ export default async function AppointmentsPage() {
       </div>
     </div>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { label: string; color: string }> = {
-    scheduled: { label: 'Запланирована', color: 'blue' },
-    confirmed: { label: 'Подтверждена', color: 'green' },
-    completed: { label: 'Завершена', color: 'gray' },
-    cancelled: { label: 'Отменена', color: 'red' },
-    no_show: { label: 'Не пришёл', color: 'orange' },
-  };
-
-  const config = statusConfig[status] || { label: status, color: 'gray' };
-
-  return (
-    <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-${config.color}-500/20 text-${config.color}-400 border border-${config.color}-500/30`}>
-      {config.label}
-    </span>
-  );
-}
-
-function formatDate(date: Date): string {
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    weekday: 'short',
-  });
-}
-
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }

@@ -1,8 +1,4 @@
-'use client';
-
-import { useState, useRef } from 'react';
-import VoiceAssistant from '@/components/VoiceAssistant';
-import ConversationHistory from '@/components/ConversationHistory';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FeaturesSection from '@/components/FeaturesSection';
@@ -10,40 +6,6 @@ import HowItWorks from '@/components/HowItWorks';
 import FAQSection from '@/components/FAQSection';
 
 export default function Home() {
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
-  const [isListening, setIsListening] = useState(false);
-  const voiceAssistantRef = useRef<HTMLDivElement>(null);
-
-  const scrollToVoiceAssistant = () => {
-    voiceAssistantRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  const handleQuickAction = (action: string) => {
-    scrollToVoiceAssistant();
-
-    // Симулируем голосовой ввод для быстрых действий
-    const actionMessages: Record<string, string> = {
-      appointment: 'Хочу записаться на приём к врачу',
-      consultation: 'Мне нужна консультация по симптомам',
-      info: 'Расскажите о режиме работы и услугах клиники',
-      emergency: 'Нужна экстренная помощь!',
-    };
-
-    const userMessage = { role: 'user' as const, content: actionMessages[action] || '' };
-    setMessages(prev => [...prev, userMessage]);
-
-    // Имитация ответа помощника (в реальности будет через Server Action)
-    setTimeout(() => {
-      const responses: Record<string, string> = {
-        appointment: 'Отлично! У нас работают врачи разных специальностей. Какой специалист вам нужен? Например: кардиолог, терапевт, невролог.',
-        consultation: 'Я готов выслушать ваши симптомы и дать рекомендации. Расскажите, что вас беспокоит?',
-        info: 'Наша клиника работает:\n• Пн-Пт: 9:00-20:00\n• Сб: 10:00-16:00\n• Вс: выходной\n\nУслуги: консультации специалистов, диагностика, анализы, УЗИ, ЭКГ.\nЧто именно вас интересует?',
-        emergency: '⚠️ ЭКСТРЕННАЯ СИТУАЦИЯ!\nВаш вызов зафиксирован. Немедленно звоните 103 или 112!\nОпишите что произошло, я передам информацию диспетчеру.',
-      };
-      const assistantMessage = { role: 'assistant' as const, content: responses[action] || 'Чем могу помочь?' };
-      setMessages(prev => [...prev, assistantMessage]);
-    }, 500);
-  };
 
   return (
     <main className="min-h-screen">
@@ -63,56 +25,53 @@ export default function Home() {
             <span>Система активна • Работает на AI Qwen 2.5</span>
           </div>
 
-          <button
-            onClick={scrollToVoiceAssistant}
-            className="neon-button text-lg px-8 py-4"
-          >
-            🎤 Начать диалог
-          </button>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link href="/assistant" className="neon-button text-lg px-8 py-4 inline-block">
+              🎤 Начать диалог
+            </Link>
+            <Link
+              href="/appointments"
+              className="px-8 py-4 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 hover:from-blue-500/40 hover:to-cyan-500/40 border border-blue-500/50 text-white font-semibold rounded-xl transition-all inline-block"
+            >
+              📅 Мои записи
+            </Link>
+          </div>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
-          <QuickActionCard
-            icon="📅"
-            title="Запись на приём"
-            description="Выберите врача и время"
-            gradient="from-cyan-500/20 to-blue-600/20"
-            onClick={() => handleQuickAction('appointment')}
-          />
-          <QuickActionCard
-            icon="🩺"
-            title="Консультация"
-            description="Опишите симптомы"
-            gradient="from-purple-500/20 to-pink-600/20"
-            onClick={() => handleQuickAction('consultation')}
-          />
-          <QuickActionCard
-            icon="ℹ️"
-            title="Справка"
-            description="Режим работы, цены"
-            gradient="from-green-500/20 to-teal-600/20"
-            onClick={() => handleQuickAction('info')}
-          />
-          <QuickActionCard
-            icon="🚨"
-            title="Скорая помощь"
-            description="Экстренный вызов"
-            gradient="from-red-500/20 to-orange-600/20"
-            onClick={() => handleQuickAction('emergency')}
-          />
-        </div>
-
-        {/* Main Voice Assistant */}
-        <div ref={voiceAssistantRef} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 scroll-mt-20">
-          <VoiceAssistant
-            messages={messages}
-            setMessages={setMessages}
-            isListening={isListening}
-            setIsListening={setIsListening}
-          />
-
-          <ConversationHistory messages={messages} />
+          <Link href="/assistant">
+            <QuickActionCard
+              icon="📅"
+              title="Запись на приём"
+              description="Выберите врача и время"
+              gradient="from-cyan-500/20 to-blue-600/20"
+            />
+          </Link>
+          <Link href="/assistant">
+            <QuickActionCard
+              icon="🩺"
+              title="Консультация"
+              description="Опишите симптомы"
+              gradient="from-purple-500/20 to-pink-600/20"
+            />
+          </Link>
+          <Link href="/assistant">
+            <QuickActionCard
+              icon="ℹ️"
+              title="Справка"
+              description="Режим работы, цены"
+              gradient="from-green-500/20 to-teal-600/20"
+            />
+          </Link>
+          <Link href="/assistant">
+            <QuickActionCard
+              icon="🚨"
+              title="Скорая помощь"
+              description="Экстренный вызов"
+              gradient="from-red-500/20 to-orange-600/20"
+            />
+          </Link>
         </div>
 
         {/* Features Section */}
@@ -161,12 +120,15 @@ export default function Home() {
             Просто нажмите на микрофон и скажите, чем мы можем вам помочь
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <button onClick={scrollToVoiceAssistant} className="neon-button text-lg">
+            <Link href="/assistant" className="neon-button text-lg px-8 py-4 inline-block">
               🎤 Говорить с помощником
-            </button>
-            <a href="/admin" className="px-8 py-4 bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/40 hover:to-pink-500/40 border border-purple-500/50 text-white font-semibold rounded-xl transition-all">
+            </Link>
+            <Link
+              href="/admin"
+              className="px-8 py-4 bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/40 hover:to-pink-500/40 border border-purple-500/50 text-white font-semibold rounded-xl transition-all inline-block"
+            >
               👨‍💼 Админ-панель
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -176,18 +138,14 @@ export default function Home() {
   );
 }
 
-function QuickActionCard({ icon, title, description, gradient, onClick }: {
+function QuickActionCard({ icon, title, description, gradient }: {
   icon: string;
   title: string;
   description: string;
   gradient: string;
-  onClick: () => void;
 }) {
   return (
-    <div
-      onClick={onClick}
-      className={`cyber-card p-6 hover:scale-105 transform transition-all cursor-pointer bg-gradient-to-br ${gradient} group`}
-    >
+    <div className={`cyber-card p-6 hover:scale-105 transform transition-all cursor-pointer bg-gradient-to-br ${gradient} group`}>
       <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{icon}</div>
       <h3 className="text-lg font-bold mb-1">{title}</h3>
       <p className="text-sm text-gray-300">{description}</p>

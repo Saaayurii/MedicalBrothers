@@ -156,7 +156,7 @@ async function AdminContent() {
       <Statistics stats={data.stats} />
 
       {/* Quick Actions */}
-      <QuickActions />
+      <QuickActions doctors={data.doctors} />
 
       {/* Emergency Calls */}
       {data.emergencies.length > 0 && <EmergencyCalls emergencies={data.emergencies} />}
