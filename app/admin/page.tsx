@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { unstable_noStore as noStore } from 'next/cache';
 import { query } from '@/lib/db';
 import AppointmentsList from '@/components/admin/AppointmentsList';
 import DoctorsList from '@/components/admin/DoctorsList';
@@ -6,6 +7,21 @@ import EmergencyCalls from '@/components/admin/EmergencyCalls';
 import Statistics from '@/components/admin/Statistics';
 
 async function getAdminData() {
+  noStore(); // Disable caching for this page
+
+  // Return mock data during build or when DB is unavailable
+  const mockData = {
+    appointments: [],
+    doctors: [],
+    emergencies: [],
+    stats: {
+      today_appointments: 0,
+      active_doctors: 0,
+      today_consultations: 0,
+      pending_emergencies: 0
+    },
+  };
+
   try {
     const [appointments, doctors, emergencies, stats] = await Promise.all([
       query(`
@@ -37,16 +53,13 @@ async function getAdminData() {
       appointments: appointments.rows,
       doctors: doctors.rows,
       emergencies: emergencies.rows,
-      stats: stats.rows[0],
+      stats: stats.rows[0] || mockData.stats,
     };
   } catch (error) {
-    console.error('Error fetching admin data:', error);
-    return {
-      appointments: [],
-      doctors: [],
-      emergencies: [],
-      stats: { today_appointments: 0, active_doctors: 0, today_consultations: 0, pending_emergencies: 0 },
-    };
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Error fetching admin data:', error);
+    }
+    return mockData;
   }
 }
 
