@@ -2,7 +2,9 @@
 
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import { verifyPassword, createSession, destroySession } from '@/lib/auth';
+import { verifyPassword, createSession, destroySession, getSession } from '@/lib/auth';
+import { createAuditLog, AuditAction, AuditEntity } from '@/lib/audit';
+import { getClientInfo } from '@/lib/audit-helpers';
 
 export interface LoginResult {
   success: boolean;
@@ -49,6 +51,16 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     // Создаём сессию
     await createSession(admin.id);
 
+    // Log the login action
+    const clientInfo = await getClientInfo();
+    await createAuditLog({
+      adminId: admin.id,
+      action: AuditAction.LOGIN,
+      entity: AuditEntity.ADMIN,
+      entityId: admin.id,
+      ...clientInfo,
+    });
+
     return {
       success: true,
     };
@@ -62,6 +74,19 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
 }
 
 export async function logoutAction(): Promise<void> {
+  // Get session before destroying it to log the logout
+  const session = await getSession();
+  if (session) {
+    const clientInfo = await getClientInfo();
+    await createAuditLog({
+      adminId: session.adminId,
+      action: AuditAction.LOGOUT,
+      entity: AuditEntity.ADMIN,
+      entityId: session.adminId,
+      ...clientInfo,
+    });
+  }
+
   await destroySession();
   redirect('/admin/login');
 }

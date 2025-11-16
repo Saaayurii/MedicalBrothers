@@ -168,11 +168,35 @@ model Admin {
   email        String   @unique @db.VarChar(255)
   passwordHash String   @map("password_hash") @db.VarChar(255)
   fullName     String?  @map("full_name") @db.VarChar(255)
-  role         String   @default("admin") @db.VarChar(50) // admin, super_admin
+  role         String   @default("admin") @db.VarChar(50) // super_admin, admin, doctor, registrar, nurse
+  doctorId     Int?     @map("doctor_id") // Link to doctor if role is doctor
   isActive     Boolean  @default(true) @map("is_active")
   lastLoginAt  DateTime? @map("last_login_at") @db.Timestamp(6)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
+  auditLogs    AuditLog[]
+
   @@map("admins")
+}
+
+// Audit Log for tracking admin actions
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  adminId     Int      @map("admin_id")
+  action      String   @db.VarChar(100) // create, update, delete, login, logout
+  entity      String   @db.VarChar(100) // appointment, doctor, patient, admin, etc.
+  entityId    Int?     @map("entity_id") // ID of the affected entity
+  details     Json?    // Additional details about the action
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  userAgent   String?  @map("user_agent") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

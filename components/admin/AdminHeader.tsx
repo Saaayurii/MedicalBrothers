@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { logoutAction } from '@/app/actions/auth';
 import { useState } from 'react';
+import { getRoleLabel } from '@/lib/roles';
 
 interface AdminHeaderProps {
   username: string;
@@ -51,6 +52,13 @@ export default function AdminHeader({ username, role }: AdminHeaderProps) {
                 🏠 Главная
               </Link>
 
+              <Link
+                href="/admin/audit-logs"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg transition-all text-sm"
+              >
+                📜 Журнал
+              </Link>
+
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
@@ -66,13 +74,4 @@ export default function AdminHeader({ username, role }: AdminHeaderProps) {
       </div>
     </header>
   );
-}
-
-function getRoleLabel(role: string): string {
-  const roleLabels: Record<string, string> = {
-    super_admin: 'Суперадминистратор',
-    admin: 'Администратор',
-  };
-
-  return roleLabels[role] || role;
 }

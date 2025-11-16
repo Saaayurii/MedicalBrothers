@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import prisma from './prisma';
+import { hasPermission, Permission } from './roles';
 
 const SESSION_COOKIE_NAME = 'admin_session';
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 дней
@@ -10,6 +11,7 @@ export interface AdminSession {
   username: string;
   email: string;
   role: string;
+  doctorId?: number | null;
 }
 
 // Хеширование пароля
@@ -26,7 +28,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 export async function createSession(adminId: number): Promise<void> {
   const admin = await prisma.admin.findUnique({
     where: { id: adminId },
-    select: { id: true, username: true, email: true, role: true },
+    select: { id: true, username: true, email: true, role: true, doctorId: true },
   });
 
   if (!admin) {
@@ -38,6 +40,7 @@ export async function createSession(adminId: number): Promise<void> {
     username: admin.username,
     email: admin.email,
     role: admin.role,
+    doctorId: admin.doctorId,
   };
 
   // Сохраняем в cookie
@@ -115,6 +118,30 @@ export async function requireRole(role: string | string[]): Promise<AdminSession
 
   if (!roles.includes(session.role)) {
     throw new Error('Forbidden');
+  }
+
+  return session;
+}
+
+// Проверка разрешения
+export async function requirePermission(permission: Permission): Promise<AdminSession> {
+  const session = await requireAuth();
+
+  if (!hasPermission(session.role, permission)) {
+    throw new Error('Forbidden: Insufficient permissions');
+  }
+
+  return session;
+}
+
+// Проверка любого из разрешений
+export async function requireAnyPermission(permissions: Permission[]): Promise<AdminSession> {
+  const session = await requireAuth();
+
+  const hasAny = permissions.some((permission) => hasPermission(session.role, permission));
+
+  if (!hasAny) {
+    throw new Error('Forbidden: Insufficient permissions');
   }
 
   return session;

@@ -13,6 +13,7 @@ import QuickActions from '@/components/admin/QuickActions';
 import AdminHeader from '@/components/admin/AdminHeader';
 import Dashboard from '@/components/admin/Dashboard';
 import AppointmentsCalendar from '@/components/admin/AppointmentsCalendar';
+import RealTimeUpdater from '@/components/admin/RealTimeUpdater';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
@@ -194,6 +195,9 @@ export default async function AdminPage() {
 
   return (
     <main className="min-h-screen">
+      {/* Real-time updater for automatic data refresh */}
+      <RealTimeUpdater interval={30000} />
+
       {/* Header */}
       <AdminHeader username={session.username} role={session.role} />
 

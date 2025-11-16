@@ -8,6 +8,7 @@ import {
   sendCancellationEmail,
   sendDoctorNotification,
 } from '@/lib/email';
+import { logCreate, logUpdate, logDelete, logStatusChange, AuditEntity } from '@/lib/audit';
 
 export interface ActionResult {
   success: boolean;
@@ -20,7 +21,7 @@ export interface ActionResult {
 
 export async function addDoctorAction(formData: FormData): Promise<ActionResult> {
   try {
-    await requireAuth();
+    const session = await requireAuth();
 
     const name = formData.get('name') as string;
     const specialty = formData.get('specialty') as string;
@@ -48,6 +49,12 @@ export async function addDoctorAction(formData: FormData): Promise<ActionResult>
       },
     });
 
+    // Log the action
+    await logCreate(session.adminId, AuditEntity.DOCTOR, doctor.id, {
+      name: doctor.name,
+      specialty: doctor.specialty,
+    });
+
     revalidatePath('/admin');
 
     return {
@@ -69,11 +76,17 @@ export async function updateDoctorStatusAction(
   isActive: boolean
 ): Promise<ActionResult> {
   try {
-    await requireAuth();
+    const session = await requireAuth();
 
-    await prisma.doctor.update({
+    const doctor = await prisma.doctor.update({
       where: { id: doctorId },
       data: { isActive },
+    });
+
+    // Log the action
+    await logUpdate(session.adminId, AuditEntity.DOCTOR, doctorId, {
+      isActive,
+      name: doctor.name,
     });
 
     revalidatePath('/admin');
@@ -228,6 +241,14 @@ export async function updateAppointmentStatusAction(
   status: string
 ): Promise<ActionResult> {
   try {
+    const session = await requireAuth();
+
+    // Get old status first
+    const oldAppointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      select: { status: true },
+    });
+
     const appointment = await prisma.appointment.update({
       where: { id: appointmentId },
       data: { status },
@@ -236,6 +257,17 @@ export async function updateAppointmentStatusAction(
         patient: true,
       },
     });
+
+    // Log the status change
+    if (oldAppointment) {
+      await logStatusChange(
+        session.adminId,
+        AuditEntity.APPOINTMENT,
+        appointmentId,
+        oldAppointment.status,
+        status
+      );
+    }
 
     revalidatePath('/admin');
     revalidatePath('/appointments');
