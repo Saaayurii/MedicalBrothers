@@ -1,10 +1,12 @@
 import { Suspense } from 'react';
 import { unstable_noStore as noStore } from 'next/cache';
-import { query } from '@/lib/db';
+import prisma from '@/lib/prisma';
 import AppointmentsList from '@/components/admin/AppointmentsList';
 import DoctorsList from '@/components/admin/DoctorsList';
 import EmergencyCalls from '@/components/admin/EmergencyCalls';
 import Statistics from '@/components/admin/Statistics';
+import RecentConsultations from '@/components/admin/RecentConsultations';
+import QuickActions from '@/components/admin/QuickActions';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
@@ -14,46 +16,122 @@ async function getAdminData() {
     appointments: [],
     doctors: [],
     emergencies: [],
+    consultations: [],
     stats: {
       today_appointments: 0,
       active_doctors: 0,
       today_consultations: 0,
-      pending_emergencies: 0
+      pending_emergencies: 0,
+      total_patients: 0,
+      this_week_appointments: 0,
     },
   };
 
   try {
-    const [appointments, doctors, emergencies, stats] = await Promise.all([
-      query(`
-        SELECT a.*, d.name as doctor_name, d.specialty, p.name as patient_name, p.phone
-        FROM appointments a
-        LEFT JOIN doctors d ON a.doctor_id = d.id
-        LEFT JOIN patients p ON a.patient_id = p.id
-        WHERE a.appointment_date >= CURRENT_DATE
-        ORDER BY a.appointment_date, a.appointment_time
-        LIMIT 20
-      `),
-      query('SELECT * FROM doctors ORDER BY name'),
-      query(`
-        SELECT * FROM emergency_calls
-        WHERE status != 'completed'
-        ORDER BY created_at DESC
-        LIMIT 10
-      `),
-      query(`
-        SELECT
-          (SELECT COUNT(*) FROM appointments WHERE appointment_date = CURRENT_DATE) as today_appointments,
-          (SELECT COUNT(*) FROM doctors WHERE is_active = true) as active_doctors,
-          (SELECT COUNT(*) FROM consultations WHERE DATE(created_at) = CURRENT_DATE) as today_consultations,
-          (SELECT COUNT(*) FROM emergency_calls WHERE status = 'pending') as pending_emergencies
-      `),
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [appointments, doctors, emergencies, consultations, stats] = await Promise.all([
+      // Get upcoming appointments with relations
+      prisma.appointment.findMany({
+        where: {
+          appointmentDate: {
+            gte: today,
+          },
+        },
+        include: {
+          doctor: true,
+          patient: true,
+        },
+        orderBy: [
+          { appointmentDate: 'asc' },
+          { appointmentTime: 'asc' },
+        ],
+        take: 20,
+      }),
+
+      // Get all active doctors
+      prisma.doctor.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      }),
+
+      // Get pending emergency calls
+      prisma.emergencyCall.findMany({
+        where: {
+          status: {
+            not: 'completed',
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 10,
+      }),
+
+      // Get recent consultations
+      prisma.consultation.findMany({
+        include: {
+          patient: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 10,
+      }),
+
+      // Get statistics
+      Promise.all([
+        prisma.appointment.count({
+          where: {
+            appointmentDate: today,
+          },
+        }),
+        prisma.doctor.count({
+          where: {
+            isActive: true,
+          },
+        }),
+        prisma.consultation.count({
+          where: {
+            createdAt: {
+              gte: today,
+            },
+          },
+        }),
+        prisma.emergencyCall.count({
+          where: {
+            status: 'pending',
+          },
+        }),
+        prisma.patient.count(),
+        prisma.appointment.count({
+          where: {
+            appointmentDate: {
+              gte: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+      ]).then(([todayAppointments, activeDoctors, todayConsultations, pendingEmergencies, totalPatients, weekAppointments]) => ({
+        today_appointments: todayAppointments,
+        active_doctors: activeDoctors,
+        today_consultations: todayConsultations,
+        pending_emergencies: pendingEmergencies,
+        total_patients: totalPatients,
+        this_week_appointments: weekAppointments,
+      })),
     ]);
 
     return {
-      appointments: appointments.rows,
-      doctors: doctors.rows,
-      emergencies: emergencies.rows,
-      stats: stats.rows[0] || mockData.stats,
+      appointments,
+      doctors,
+      emergencies,
+      consultations,
+      stats,
     };
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
@@ -68,9 +146,12 @@ async function AdminContent() {
   const data = await getAdminData();
 
   return (
-    <>
+    <div className="space-y-8">
       {/* Statistics */}
       <Statistics stats={data.stats} />
+
+      {/* Quick Actions */}
+      <QuickActions />
 
       {/* Emergency Calls */}
       {data.emergencies.length > 0 && <EmergencyCalls emergencies={data.emergencies} />}
@@ -83,7 +164,10 @@ async function AdminContent() {
         {/* Doctors */}
         <DoctorsList doctors={data.doctors} />
       </div>
-    </>
+
+      {/* Recent Consultations */}
+      <RecentConsultations consultations={data.consultations} />
+    </div>
   );
 }
 
