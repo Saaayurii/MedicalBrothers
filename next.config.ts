@@ -1,13 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  experimental: {
-    ppr: true, // Partial Prerendering
-    reactCompiler: true,
-    turbopack: {
-      // Turbopack options for faster development builds
-    },
-  },
+  cacheComponents: true, // Partial Prerendering (Next.js 16)
   typescript: {
     ignoreBuildErrors: false,
   },

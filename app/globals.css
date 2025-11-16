@@ -13,10 +13,6 @@
     --foreground: 210 40% 98%;
   }
 
-  * {
-    @apply border-border;
-  }
-
   body {
     @apply bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white min-h-screen;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
