@@ -1,13 +1,16 @@
 import { Suspense } from 'react';
 import { unstable_noStore as noStore } from 'next/cache';
 import { connection } from 'next/server';
+import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
 import AppointmentsList from '@/components/admin/AppointmentsList';
 import DoctorsList from '@/components/admin/DoctorsList';
 import EmergencyCalls from '@/components/admin/EmergencyCalls';
 import Statistics from '@/components/admin/Statistics';
 import RecentConsultations from '@/components/admin/RecentConsultations';
 import QuickActions from '@/components/admin/QuickActions';
+import AdminHeader from '@/components/admin/AdminHeader';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
@@ -173,27 +176,20 @@ async function AdminContent() {
   );
 }
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  // Проверяем авторизацию
+  const session = await getSession();
+
+  if (!session) {
+    redirect('/admin/login');
+  }
+
   return (
-    <main className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="cyber-card p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-600">
-                Админ-панель
-              </h1>
-              <p className="text-gray-400 mt-2">Управление клиникой MedicalBrothers</p>
-            </div>
-            <a
-              href="/"
-              className="neon-button"
-            >
-              ← Назад на главную
-            </a>
-          </div>
-        </div>
+    <main className="min-h-screen">
+      {/* Header */}
+      <AdminHeader username={session.username} role={session.role} />
+
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
 
         {/* All data fetching wrapped in Suspense */}
         <Suspense
