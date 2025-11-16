@@ -1,10 +1,13 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyPassword, createSession, destroySession, getSession } from '@/lib/auth';
 import { createAuditLog, AuditAction, AuditEntity } from '@/lib/audit';
 import { getClientInfo } from '@/lib/audit-helpers';
+import { checkRateLimit, authRateLimit, getClientIdentifier } from '@/lib/rate-limit';
+import { logSuspiciousActivity } from '@/lib/security';
 
 export interface LoginResult {
   success: boolean;
@@ -23,6 +26,24 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
   }
 
   try {
+    // Check rate limit
+    const headersList = await headers();
+    const identifier = getClientIdentifier(headersList);
+    const rateLimit = await checkRateLimit(identifier, authRateLimit);
+
+    if (!rateLimit.success) {
+      await logSuspiciousActivity('failed_login', {
+        username,
+        reason: 'rate_limit_exceeded',
+        remaining: rateLimit.remaining,
+      });
+
+      return {
+        success: false,
+        error: `Слишком много попыток входа. Попробуйте через ${Math.ceil((rateLimit.reset - Date.now()) / 1000 / 60)} минут`,
+      };
+    }
+
     // Находим админа по username
     const admin = await prisma.admin.findFirst({
       where: {
@@ -32,6 +53,11 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     });
 
     if (!admin) {
+      await logSuspiciousActivity('failed_login', {
+        username,
+        reason: 'user_not_found',
+      });
+
       return {
         success: false,
         error: 'Неверное имя пользователя или пароль',
@@ -42,6 +68,12 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     const isValidPassword = await verifyPassword(password, admin.passwordHash);
 
     if (!isValidPassword) {
+      await logSuspiciousActivity('failed_login', {
+        username,
+        adminId: admin.id,
+        reason: 'invalid_password',
+      });
+
       return {
         success: false,
         error: 'Неверное имя пользователя или пароль',
