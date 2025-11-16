@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Doctor } from '@prisma/client';
+import Pagination, { usePagination } from '@/components/Pagination';
 
 export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +26,16 @@ export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
       return true;
     });
   }, [doctors, searchQuery, activeFilter]);
+
+  // Пагинация
+  const {
+    currentPage,
+    totalPages,
+    currentItems,
+    handlePageChange,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(filteredDoctors, 10);
 
   return (
     <div className="cyber-card p-6">
@@ -55,14 +66,14 @@ export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
         </select>
       </div>
 
-      <div className="space-y-4 max-h-[600px] overflow-y-auto">
+      <div className="space-y-4">
         {filteredDoctors.length === 0 ? (
           <div className="text-center text-gray-500 py-12">
             <p className="text-4xl mb-4">👨‍⚕️</p>
             <p>{searchQuery || activeFilter !== 'all' ? 'Не найдено врачей' : 'Нет врачей'}</p>
           </div>
         ) : (
-          filteredDoctors.map((doctor) => (
+          currentItems.map((doctor) => (
           <div
             key={doctor.id}
             className={`bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4 hover:border-purple-400/50 transition-all ${
@@ -111,6 +122,17 @@ export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
           ))
         )}
       </div>
+
+      {/* Пагинация */}
+      {filteredDoctors.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
+      )}
 
       <button className="w-full mt-6 neon-button">
         ➕ Добавить врача

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { unparse } from 'papaparse';
 import Modal from '@/components/Modal';
 import { generateReportAction } from '@/app/actions/admin';
 
@@ -97,6 +98,75 @@ export default function GenerateReportModal({ isOpen, onClose }: GenerateReportM
     setReportData(null);
     setSubmitMessage(null);
     onClose();
+  };
+
+  const handleExportCSV = () => {
+    if (!reportData) return;
+
+    let csvData: any[] = [];
+    let filename = 'report.csv';
+
+    // Формируем данные для CSV в зависимости от типа отчёта
+    if (reportData.data.doctors && reportData.data.doctors.length > 0) {
+      csvData = reportData.data.doctors.map(doctor => ({
+        'Врач': doctor.name,
+        'Специальность': doctor.specialty,
+        'Записей': doctor.appointments,
+        'Завершено': doctor.completed,
+        'Рейтинг': doctor.rating || 'N/A',
+      }));
+      filename = 'doctors_report.csv';
+    } else if (reportData.data.daily_stats && reportData.data.daily_stats.length > 0) {
+      csvData = reportData.data.daily_stats.map(day => ({
+        'Дата': day.date,
+        'Записей': day.appointments,
+        'Доход (₽)': day.revenue,
+      }));
+      filename = 'daily_stats.csv';
+    } else {
+      // Общая статистика
+      csvData = [
+        {
+          'Метрика': 'Всего записей',
+          'Значение': reportData.data.total_appointments || 0,
+        },
+        {
+          'Метрика': 'Завершённых записей',
+          'Значение': reportData.data.completed_appointments || 0,
+        },
+        {
+          'Метрика': 'Отменённых записей',
+          'Значение': reportData.data.cancelled_appointments || 0,
+        },
+        {
+          'Метрика': 'Новых пациентов',
+          'Значение': reportData.data.new_patients || 0,
+        },
+        {
+          'Метрика': 'Общий доход (₽)',
+          'Значение': reportData.data.total_revenue || 0,
+        },
+      ];
+      filename = `${reportData.type}_report.csv`;
+    }
+
+    // Конвертируем в CSV
+    const csv = unparse(csvData, {
+      delimiter: ',',
+      header: true,
+    });
+
+    // Создаём и скачиваем файл
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM для корректного отображения UTF-8
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -231,10 +301,7 @@ export default function GenerateReportModal({ isOpen, onClose }: GenerateReportM
               {/* Кнопки действий */}
               <div className="flex gap-4 mt-6">
                 <button
-                  onClick={() => {
-                    // Экспорт в CSV (заглушка)
-                    alert('Экспорт в CSV будет добавлен в следующей версии');
-                  }}
+                  onClick={handleExportCSV}
                   className="flex-1 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg transition-all"
                 >
                   📥 Экспорт в CSV

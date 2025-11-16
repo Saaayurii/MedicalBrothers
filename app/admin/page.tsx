@@ -11,6 +11,8 @@ import Statistics from '@/components/admin/Statistics';
 import RecentConsultations from '@/components/admin/RecentConsultations';
 import QuickActions from '@/components/admin/QuickActions';
 import AdminHeader from '@/components/admin/AdminHeader';
+import Dashboard from '@/components/admin/Dashboard';
+import AppointmentsCalendar from '@/components/admin/AppointmentsCalendar';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
@@ -160,6 +162,12 @@ async function AdminContent() {
 
       {/* Emergency Calls */}
       {data.emergencies.length > 0 && <EmergencyCalls emergencies={data.emergencies} />}
+
+      {/* Dashboard Analytics */}
+      <Dashboard appointments={data.appointments} doctors={data.doctors} />
+
+      {/* Appointments Calendar */}
+      <AppointmentsCalendar appointments={data.appointments} />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Appointment, Doctor, Patient } from '@prisma/client';
+import Pagination, { usePagination } from '@/components/Pagination';
 
 type AppointmentWithRelations = Appointment & {
   doctor: Doctor;
@@ -35,6 +36,16 @@ export default function AppointmentsList({ appointments }: { appointments: Appoi
     });
   }, [appointments, searchQuery, statusFilter]);
 
+  // Пагинация
+  const {
+    currentPage,
+    totalPages,
+    currentItems,
+    handlePageChange,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(filteredAppointments, 10);
+
   return (
     <div className="cyber-card p-6">
       <h2 className="text-2xl font-bold mb-6 text-cyan-400">
@@ -67,14 +78,14 @@ export default function AppointmentsList({ appointments }: { appointments: Appoi
         </select>
       </div>
 
-      <div className="space-y-4 max-h-[600px] overflow-y-auto">
+      <div className="space-y-4">
         {filteredAppointments.length === 0 ? (
           <div className="text-center text-gray-500 py-12">
             <p className="text-4xl mb-4">📭</p>
             <p>{searchQuery || statusFilter !== 'all' ? 'Не найдено записей' : 'Нет предстоящих записей'}</p>
           </div>
         ) : (
-          filteredAppointments.map((appointment) => (
+          currentItems.map((appointment) => (
             <div
               key={appointment.id}
               className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-4 hover:border-blue-400/50 transition-all"
@@ -125,6 +136,17 @@ export default function AppointmentsList({ appointments }: { appointments: Appoi
           ))
         )}
       </div>
+
+      {/* Пагинация */}
+      {filteredAppointments.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
+      )}
     </div>
   );
 }
