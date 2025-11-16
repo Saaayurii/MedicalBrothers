@@ -1,0 +1,21 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="32" fill="url(#gradient1)"/>
+
+  <!-- Medical Cross -->
+  <rect x="28" y="12" width="8" height="40" rx="2" fill="white"/>
+  <rect x="12" y="28" width="40" height="8" rx="2" fill="white"/>
+
+  <!-- Pulse Line Effect -->
+  <path d="M8 32 L16 32 L20 24 L24 40 L28 32 L32 32" stroke="#00F5FF" stroke-width="2" fill="none" opacity="0.6"/>
+  <path d="M32 32 L36 32 L40 24 L44 40 L48 32 L56 32" stroke="#00F5FF" stroke-width="2" fill="none" opacity="0.6"/>
+
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0088E6"/>
+      <stop offset="50%" stop-color="#667EEA"/>
+      <stop offset="100%" stop-color="#764BA2"/>
+    </linearGradient>
+  </defs>
+</svg>

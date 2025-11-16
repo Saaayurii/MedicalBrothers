@@ -1,0 +1,20 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="180" height="180" rx="40" fill="url(#gradient2)"/>
+
+  <!-- Medical Cross -->
+  <rect x="76" y="30" width="28" height="120" rx="6" fill="white"/>
+  <rect x="30" y="76" width="120" height="28" rx="6" fill="white"/>
+
+  <!-- Heart Icon Small -->
+  <path d="M90 140 C80 135, 70 125, 70 115 C70 105, 75 100, 80 100 C85 100, 88 103, 90 105 C92 103, 95 100, 100 100 C105 100, 110 105, 110 115 C110 125, 100 135, 90 140 Z" fill="#00F5FF" opacity="0.8"/>
+
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient2" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0088E6"/>
+      <stop offset="50%" stop-color="#667EEA"/>
+      <stop offset="100%" stop-color="#764BA2"/>
+    </linearGradient>
+  </defs>
+</svg>
