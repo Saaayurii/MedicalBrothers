@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Appointment, Doctor, Patient } from '@prisma/client';
 import { cancelAppointmentAction, confirmAppointmentAction } from '@/app/actions/admin';
+import AppointmentDetailsModal from './AppointmentDetailsModal';
 
 type AppointmentWithRelations = Appointment & {
   doctor: Doctor;
@@ -17,6 +18,7 @@ export default function AppointmentCard({ appointment: initialAppointment }: App
   const [appointment, setAppointment] = useState(initialAppointment);
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleCancel = async () => {
     if (!confirm('Вы уверены, что хотите отменить запись?')) return;
@@ -25,10 +27,8 @@ export default function AppointmentCard({ appointment: initialAppointment }: App
     setMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append('appointmentId', appointment.id.toString());
 
-      const result = await cancelAppointmentAction(formData);
+      const result = await cancelAppointmentAction(appointment.id);
 
       if (result.success) {
         setMessage({ type: 'success', text: 'Запись успешно отменена' });
@@ -48,10 +48,8 @@ export default function AppointmentCard({ appointment: initialAppointment }: App
     setMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append('appointmentId', appointment.id.toString());
 
-      const result = await confirmAppointmentAction(formData);
+      const result = await confirmAppointmentAction(appointment.id);
 
       if (result.success) {
         setMessage({ type: 'success', text: 'Запись подтверждена' });
@@ -124,21 +122,28 @@ export default function AppointmentCard({ appointment: initialAppointment }: App
 
       {/* Действия */}
       <div className="flex gap-2 mt-4">
+        <button
+          onClick={() => setIsDetailsOpen(true)}
+          className="flex-1 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg text-sm transition-all"
+        >
+          📋 Подробнее
+        </button>
+
         {appointment.status === 'scheduled' && (
           <>
             <button
               onClick={handleConfirm}
               disabled={isProcessing}
-              className="flex-1 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? 'Обработка...' : 'Подтвердить'}
+              {isProcessing ? '...' : '✓'}
             </button>
             <button
               onClick={handleCancel}
               disabled={isProcessing}
               className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? '...' : 'Отменить'}
+              {isProcessing ? '...' : '✗'}
             </button>
           </>
         )}
@@ -146,17 +151,20 @@ export default function AppointmentCard({ appointment: initialAppointment }: App
           <button
             onClick={handleCancel}
             disabled={isProcessing}
-            className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isProcessing ? 'Обработка...' : 'Отменить запись'}
+            {isProcessing ? '...' : '✗'}
           </button>
         )}
-        {(appointment.status === 'cancelled' || appointment.status === 'completed') && (
-          <div className="flex-1 px-4 py-2 text-center text-sm text-gray-500">
-            {appointment.status === 'cancelled' ? 'Запись отменена' : 'Приём завершён'}
-          </div>
-        )}
       </div>
+
+      {/* Модальное окно деталей */}
+      <AppointmentDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        appointment={appointment}
+        onUpdate={(updatedAppointment) => setAppointment(updatedAppointment)}
+      />
     </div>
   );
 }

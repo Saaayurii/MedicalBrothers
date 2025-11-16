@@ -1,16 +1,68 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import type { Doctor } from '@prisma/client';
 
 export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+
+  const filteredDoctors = useMemo(() => {
+    return doctors.filter((doctor) => {
+      // Фильтр по статусу активности
+      if (activeFilter === 'active' && !doctor.isActive) return false;
+      if (activeFilter === 'inactive' && doctor.isActive) return false;
+
+      // Поиск по имени и специальности
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const name = doctor.name.toLowerCase();
+        const specialty = doctor.specialty.toLowerCase();
+
+        return name.includes(query) || specialty.includes(query);
+      }
+
+      return true;
+    });
+  }, [doctors, searchQuery, activeFilter]);
+
   return (
     <div className="cyber-card p-6">
       <h2 className="text-2xl font-bold mb-6 text-purple-400">
-        👨‍⚕️ Врачи клиники
+        👨‍⚕️ Врачи клиники ({filteredDoctors.length})
       </h2>
 
+      {/* Поиск и фильтры */}
+      <div className="mb-4 space-y-3">
+        {/* Поиск */}
+        <input
+          type="text"
+          placeholder="🔍 Поиск по имени или специальности..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+        />
+
+        {/* Фильтр по активности */}
+        <select
+          value={activeFilter}
+          onChange={(e) => setActiveFilter(e.target.value)}
+          className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+        >
+          <option value="all">Все врачи</option>
+          <option value="active">Только активные</option>
+          <option value="inactive">Неактивные</option>
+        </select>
+      </div>
+
       <div className="space-y-4 max-h-[600px] overflow-y-auto">
-        {doctors.map((doctor) => (
+        {filteredDoctors.length === 0 ? (
+          <div className="text-center text-gray-500 py-12">
+            <p className="text-4xl mb-4">👨‍⚕️</p>
+            <p>{searchQuery || activeFilter !== 'all' ? 'Не найдено врачей' : 'Нет врачей'}</p>
+          </div>
+        ) : (
+          filteredDoctors.map((doctor) => (
           <div
             key={doctor.id}
             className={`bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4 hover:border-purple-400/50 transition-all ${
@@ -56,7 +108,8 @@ export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
               </button>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       <button className="w-full mt-6 neon-button">

@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { unstable_noStore as noStore } from 'next/cache';
+import { connection } from 'next/server';
 import AppointmentCard from '@/components/AppointmentCard';
 
 export default async function AppointmentsPage() {
   noStore();
+  await connection();
 
   // Получаем все будущие записи
   const today = new Date();

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import type { Appointment, Doctor, Patient } from '@prisma/client';
 
 type AppointmentWithRelations = Appointment & {
@@ -8,20 +9,72 @@ type AppointmentWithRelations = Appointment & {
 };
 
 export default function AppointmentsList({ appointments }: { appointments: AppointmentWithRelations[] }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((appointment) => {
+      // Фильтр по статусу
+      if (statusFilter !== 'all' && appointment.status !== statusFilter) {
+        return false;
+      }
+
+      // Поиск по имени врача, пациента, симптомам
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const doctorName = appointment.doctor.name.toLowerCase();
+        const patientName = appointment.patient?.name?.toLowerCase() || '';
+        const symptoms = appointment.symptoms?.toLowerCase() || '';
+
+        return (
+          doctorName.includes(query) || patientName.includes(query) || symptoms.includes(query)
+        );
+      }
+
+      return true;
+    });
+  }, [appointments, searchQuery, statusFilter]);
+
   return (
     <div className="cyber-card p-6">
       <h2 className="text-2xl font-bold mb-6 text-cyan-400">
-        📋 Предстоящие записи
+        📋 Предстоящие записи ({filteredAppointments.length})
       </h2>
 
+      {/* Поиск и фильтры */}
+      <div className="mb-4 space-y-3">
+        {/* Поиск */}
+        <input
+          type="text"
+          placeholder="🔍 Поиск по имени врача, пациента или симптомам..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm"
+        />
+
+        {/* Фильтр по статусу */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm"
+        >
+          <option value="all">Все статусы</option>
+          <option value="scheduled">Запланированные</option>
+          <option value="confirmed">Подтверждённые</option>
+          <option value="completed">Завершённые</option>
+          <option value="cancelled">Отменённые</option>
+          <option value="no_show">Не пришёл</option>
+        </select>
+      </div>
+
       <div className="space-y-4 max-h-[600px] overflow-y-auto">
-        {appointments.length === 0 ? (
+        {filteredAppointments.length === 0 ? (
           <div className="text-center text-gray-500 py-12">
             <p className="text-4xl mb-4">📭</p>
-            <p>Нет предстоящих записей</p>
+            <p>{searchQuery || statusFilter !== 'all' ? 'Не найдено записей' : 'Нет предстоящих записей'}</p>
           </div>
         ) : (
-          appointments.map((appointment) => (
+          filteredAppointments.map((appointment) => (
             <div
               key={appointment.id}
               className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-4 hover:border-blue-400/50 transition-all"

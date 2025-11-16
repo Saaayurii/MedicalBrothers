@@ -255,8 +255,9 @@ export async function confirmAppointmentAction(appointmentId: number): Promise<A
 
 // ==================== ОТЧЁТЫ ====================
 
-export async function generateReportAction(reportType: string): Promise<ActionResult> {
+export async function generateReportAction(formData: FormData): Promise<ActionResult> {
   try {
+    const reportType = (formData.get('reportType') as string) || 'daily';
     await requireAuth();
 
     const today = new Date();

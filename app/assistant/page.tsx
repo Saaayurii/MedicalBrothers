@@ -12,6 +12,7 @@ interface Message {
 
 export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isListening, setIsListening] = useState(false);
 
   const handleNewMessage = (message: Message) => {
     setMessages(prev => [...prev, message]);
@@ -54,7 +55,12 @@ export default function AssistantPage() {
             <h2 className="text-3xl font-bold mb-6 text-center">
               Голосовой ассистент
             </h2>
-            <VoiceAssistant onNewMessage={handleNewMessage} />
+            <VoiceAssistant
+              messages={messages}
+              setMessages={setMessages}
+              isListening={isListening}
+              setIsListening={setIsListening}
+            />
 
             {/* Инструкция */}
             <div className="mt-8 cyber-card p-6">

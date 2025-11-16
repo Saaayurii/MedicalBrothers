@@ -4,6 +4,8 @@ import { useState } from 'react';
 import AddDoctorModal from './modals/AddDoctorModal';
 import GenerateSlotsModal from './modals/GenerateSlotsModal';
 import AddPatientModal from './modals/AddPatientModal';
+import GenerateReportModal from './modals/GenerateReportModal';
+import SettingsModal from './modals/SettingsModal';
 import type { Doctor } from '@prisma/client';
 
 interface QuickActionsProps {
@@ -14,6 +16,8 @@ export default function QuickActions({ doctors }: QuickActionsProps) {
   const [isAddDoctorOpen, setIsAddDoctorOpen] = useState(false);
   const [isGenerateSlotsOpen, setIsGenerateSlotsOpen] = useState(false);
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
+  const [isGenerateReportOpen, setIsGenerateReportOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const actions = [
     {
@@ -42,14 +46,14 @@ export default function QuickActions({ doctors }: QuickActionsProps) {
       title: 'Отчёты',
       description: 'Генерация аналитики',
       color: 'green',
-      action: () => alert('Функция в разработке'),
+      action: () => setIsGenerateReportOpen(true),
     },
     {
       icon: '⚙️',
       title: 'Настройки',
       description: 'Конфигурация клиники',
       color: 'orange',
-      action: () => alert('Функция в разработке'),
+      action: () => setIsSettingsOpen(true),
     },
     {
       icon: '🗄️',
@@ -92,6 +96,8 @@ export default function QuickActions({ doctors }: QuickActionsProps) {
         doctors={doctors}
       />
       <AddPatientModal isOpen={isAddPatientOpen} onClose={() => setIsAddPatientOpen(false)} />
+      <GenerateReportModal isOpen={isGenerateReportOpen} onClose={() => setIsGenerateReportOpen(false)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
   );
 }
