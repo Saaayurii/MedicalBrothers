@@ -23,6 +23,7 @@
     "ai": "^4.0.0",
     "bcryptjs": "^2.4.3",
     "next": "^16.0.0-canary",
+    "nodemailer": "^7.0.10",
     "ollama-ai-provider": "^1.0.0",
     "papaparse": "^5.5.3",
     "pg": "^8.13.1",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22",
+    "@types/nodemailer": "^7.0.3",
     "@types/papaparse": "^5.5.0",
     "@types/pg": "^8.11.10",
     "@types/react": "^19",

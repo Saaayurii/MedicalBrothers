@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import {
+  sendAppointmentConfirmation,
+  sendCancellationEmail,
+  sendDoctorNotification,
+} from '@/lib/email';
 
 export interface ActionResult {
   success: boolean;
@@ -226,10 +231,25 @@ export async function updateAppointmentStatusAction(
     const appointment = await prisma.appointment.update({
       where: { id: appointmentId },
       data: { status },
+      include: {
+        doctor: true,
+        patient: true,
+      },
     });
 
     revalidatePath('/admin');
     revalidatePath('/appointments');
+
+    // Отправляем email уведомление при подтверждении
+    if (status === 'confirmed') {
+      await sendAppointmentConfirmation(appointment);
+      await sendDoctorNotification(appointment);
+    }
+
+    // Отправляем email уведомление при отмене
+    if (status === 'cancelled') {
+      await sendCancellationEmail(appointment);
+    }
 
     return {
       success: true,

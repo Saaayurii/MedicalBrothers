@@ -67,10 +67,13 @@ model Patient {
   id             Int      @id @default(autoincrement())
   name           String?  @db.VarChar(255)
   phone          String?  @unique @db.VarChar(20)
-  email          String?  @db.VarChar(255)
+  email          String?  @unique @db.VarChar(255)
+  passwordHash   String?  @map("password_hash") @db.VarChar(255)
   dateOfBirth    DateTime? @map("date_of_birth") @db.Date
   address        String?  @db.Text
   medicalHistory String?  @map("medical_history") @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  lastLoginAt    DateTime? @map("last_login_at") @db.Timestamp(6)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
