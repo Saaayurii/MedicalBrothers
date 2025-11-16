@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+
+import { requireApiAuth, requireApiRole } from '@/lib/api-auth';
 
 /**
  * @swagger
@@ -40,14 +40,9 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     const { searchParams } = new URL(request.url);
     const patientIdParam = searchParams.get('patientId');
@@ -56,11 +51,11 @@ export async function GET(request: NextRequest) {
     let patientId: number;
 
     // Admin can view any patient's transactions
-    if (session.user.role === 'admin' && patientIdParam) {
+    if (user.role === 'admin' && patientIdParam) {
       patientId = parseInt(patientIdParam);
     } else {
       // Regular users can only view their own transactions
-      patientId = parseInt(session.user.id);
+      patientId = parseInt(user.id);
     }
 
     const transactions = await prisma.pointsTransaction.findMany({

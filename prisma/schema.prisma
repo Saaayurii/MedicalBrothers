@@ -30,6 +30,9 @@ model Doctor {
   medicalRecords MedicalRecord[]
   labOrders      LabOrder[]
 
+  @@index([specialty])
+  @@index([isActive])
+  @@index([email])
   @@map("doctors")
 }
 
@@ -45,6 +48,9 @@ model DoctorSchedule {
 
   doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
+  @@index([doctorId])
+  @@index([dayOfWeek])
+  @@index([isAvailable])
   @@map("doctor_schedules")
 }
 
@@ -62,6 +68,10 @@ model TimeSlot {
   appointments Appointment[]
 
   @@unique([doctorId, slotDate, slotTime])
+  @@index([doctorId])
+  @@index([slotDate])
+  @@index([isBooked])
+  @@index([doctorId, slotDate, isBooked])
   @@map("time_slots")
 }
 
@@ -89,6 +99,9 @@ model Patient {
   loyaltyPoints       LoyaltyPoints?
   pointsTransactions  PointsTransaction[]
 
+  @@index([email])
+  @@index([phone])
+  @@index([isActive])
   @@map("patients")
 }
 
@@ -114,6 +127,12 @@ model Appointment {
   reminders      Reminder[]
   labOrders      LabOrder[]
 
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([appointmentDate])
+  @@index([status])
+  @@index([doctorId, appointmentDate])
+  @@index([patientId, status])
   @@map("appointments")
 }
 
@@ -129,6 +148,9 @@ model Consultation {
 
   patient Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
 
+  @@index([patientId])
+  @@index([severityLevel])
+  @@index([createdAt])
   @@map("consultations")
 }
 
@@ -145,6 +167,9 @@ model EmergencyCall {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
   @@map("emergency_calls")
 }
 
@@ -158,6 +183,8 @@ model ClinicInfo {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
+  @@index([category])
+  @@index([isActive])
   @@map("clinic_info")
 }
 
@@ -171,6 +198,9 @@ model ConversationLog {
   metadata   Json?
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
+  @@index([sessionId])
+  @@index([intent])
+  @@index([createdAt])
   @@map("conversation_logs")
 }
 
@@ -190,6 +220,11 @@ model Admin {
 
   auditLogs    AuditLog[]
 
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@index([doctorId])
   @@map("admins")
 }
 

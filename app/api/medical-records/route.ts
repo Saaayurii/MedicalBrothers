@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+
+import { requireApiAuth, requireApiRole } from '@/lib/api-auth';
 
 /**
  * @swagger
@@ -36,14 +36,9 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     const { searchParams } = new URL(request.url);
     const patientIdParam = searchParams.get('patientId');
@@ -53,12 +48,12 @@ export async function GET(request: NextRequest) {
     // Determine which patient's records to fetch
     let patientId: number;
 
-    if (session.user.role === 'admin' || session.user.role === 'doctor') {
+    if (user.role === 'admin' || user.role === 'doctor') {
       // Admin or doctor can view any patient's records
-      patientId = patientIdParam ? parseInt(patientIdParam) : parseInt(session.user.id);
+      patientId = patientIdParam ? parseInt(patientIdParam) : parseInt(user.id);
     } else {
       // Regular users can only view their own records
-      patientId = parseInt(session.user.id);
+      patientId = parseInt(user.id);
     }
 
     const where: any = {
@@ -70,8 +65,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Non-admin users can't see confidential records unless they're the patient
-    if (session.user.role !== 'admin' && session.user.role !== 'doctor') {
-      if (patientId !== parseInt(session.user.id)) {
+    if (user.role !== 'admin' && user.role !== 'doctor') {
+      if (patientId !== parseInt(user.id)) {
         where.isConfidential = false;
       }
     }
@@ -160,17 +155,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     // Only doctors and admins can create medical records
-    if (session.user.role !== 'doctor' && session.user.role !== 'admin') {
+    if (user.role !== 'doctor' && user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Only doctors and administrators can create medical records' },
         { status: 403 }
@@ -224,7 +214,7 @@ export async function POST(request: NextRequest) {
     const record = await prisma.medicalRecord.create({
       data: {
         patientId: parseInt(patientId),
-        doctorId: session.user.role === 'doctor' ? parseInt(session.user.id) : null,
+        doctorId: user.role === 'doctor' ? parseInt(user.id) : null,
         appointmentId: appointmentId ? parseInt(appointmentId) : null,
         recordType,
         title,

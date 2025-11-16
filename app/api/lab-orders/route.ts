@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+
+import { requireApiAuth, requireApiRole } from '@/lib/api-auth';
 
 /**
  * @swagger
@@ -35,14 +35,9 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     const { searchParams } = new URL(request.url);
     const patientIdParam = searchParams.get('patientId');
@@ -53,18 +48,18 @@ export async function GET(request: NextRequest) {
     const where: any = {};
 
     // Determine permissions
-    if (session.user.role === 'admin' || session.user.role === 'doctor') {
+    if (user.role === 'admin' || user.role === 'doctor') {
       if (patientIdParam) {
         patientId = parseInt(patientIdParam);
         where.patientId = patientId;
       }
       // Doctors can see orders they created
-      if (session.user.role === 'doctor' && !patientIdParam) {
-        where.doctorId = parseInt(session.user.id);
+      if (user.role === 'doctor' && !patientIdParam) {
+        where.doctorId = parseInt(user.id);
       }
     } else {
       // Regular users can only see their own orders
-      where.patientId = parseInt(session.user.id);
+      where.patientId = parseInt(user.id);
     }
 
     if (status) {
@@ -149,17 +144,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     // Only doctors and admins can create lab orders
-    if (session.user.role !== 'doctor' && session.user.role !== 'admin') {
+    if (user.role !== 'doctor' && user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Only doctors and administrators can create lab orders' },
         { status: 403 }
@@ -196,7 +186,7 @@ export async function POST(request: NextRequest) {
     const labOrder = await prisma.labOrder.create({
       data: {
         patientId: parseInt(patientId),
-        doctorId: parseInt(session.user.id),
+        doctorId: parseInt(user.id),
         appointmentId: appointmentId ? parseInt(appointmentId) : null,
         orderNumber,
         labName,
@@ -268,17 +258,12 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     // Only doctors and admins can update lab orders
-    if (session.user.role !== 'doctor' && session.user.role !== 'admin') {
+    if (user.role !== 'doctor' && user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Only doctors and administrators can update lab orders' },
         { status: 403 }

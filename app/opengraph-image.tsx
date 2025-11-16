@@ -1,5 +1,9 @@
 import { ImageResponse } from 'next/og';
 
+// Make this route dynamic to avoid build-time font fetching issues
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
 // Image metadata
 export const alt = 'MedicalBrothers - Медицинский Голосовой Помощник';
 export const size = {
@@ -16,6 +20,7 @@ export default async function Image() {
       <div
         style={{
           fontSize: 60,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
           background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #581c87 100%)',
           width: '100%',
           height: '100%',

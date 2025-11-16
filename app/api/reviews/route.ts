@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireApiAuth } from '@/lib/api-auth';
 
 /**
  * @swagger
@@ -147,14 +146,10 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const { user } = authResult;
 
     const body = await request.json();
     const { doctorId, appointmentId, rating, comment } = body;
@@ -185,7 +180,7 @@ export async function POST(request: NextRequest) {
       const appointment = await prisma.appointment.findFirst({
         where: {
           id: parseInt(appointmentId),
-          patientId: parseInt(session.user.id),
+          patientId: parseInt(user.id),
           doctorId: parseInt(doctorId),
           status: 'completed',
         },
@@ -217,7 +212,7 @@ export async function POST(request: NextRequest) {
     const review = await prisma.review.create({
       data: {
         doctorId: parseInt(doctorId),
-        patientId: parseInt(session.user.id),
+        patientId: parseInt(user.id),
         appointmentId: appointmentId ? parseInt(appointmentId) : null,
         rating: parseInt(rating),
         comment,

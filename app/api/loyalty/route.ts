@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+
+import { requireApiAuth, requireApiRole } from '@/lib/api-auth';
 
 /**
  * @swagger
@@ -38,14 +38,9 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     const { searchParams } = new URL(request.url);
     const patientIdParam = searchParams.get('patientId');
@@ -53,11 +48,11 @@ export async function GET(request: NextRequest) {
     let patientId: number;
 
     // Admin can view any patient's loyalty points
-    if (session.user.role === 'admin' && patientIdParam) {
+    if (user.role === 'admin' && patientIdParam) {
       patientId = parseInt(patientIdParam);
     } else {
       // Regular users can only view their own loyalty points
-      patientId = parseInt(session.user.id);
+      patientId = parseInt(user.id);
     }
 
     // Get or create loyalty points record
@@ -128,14 +123,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     const body = await request.json();
     const { patientId, amount, type, description } = body;
@@ -149,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only admin can modify other users' points
-    if (session.user.role !== 'admin' && parseInt(patientId) !== parseInt(session.user.id)) {
+    if (user.role !== 'admin' && parseInt(patientId) !== parseInt(user.id)) {
       return NextResponse.json(
         { error: 'You can only modify your own loyalty points' },
         { status: 403 }

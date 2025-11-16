@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+
+import { requireApiAuth, requireApiRole } from '@/lib/api-auth';
 
 /**
  * @swagger
@@ -29,14 +29,9 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     const { searchParams } = new URL(request.url);
     const appointmentId = searchParams.get('appointmentId');
@@ -45,8 +40,8 @@ export async function GET(request: NextRequest) {
     const where: any = {};
 
     // Regular users can only see their own reminders
-    if (session.user.role !== 'admin' && session.user.role !== 'doctor') {
-      where.patientId = parseInt(session.user.id);
+    if (user.role !== 'admin' && user.role !== 'doctor') {
+      where.patientId = parseInt(user.id);
     }
 
     if (appointmentId) {
@@ -128,14 +123,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireApiAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     const body = await request.json();
     const { appointmentId, reminderType, scheduledFor, message } = body;
@@ -175,9 +165,9 @@ export async function POST(request: NextRequest) {
 
     // Check if user has permission to create reminder for this appointment
     if (
-      session.user.role !== 'admin' &&
-      session.user.role !== 'doctor' &&
-      appointment.patientId !== parseInt(session.user.id)
+      user.role !== 'admin' &&
+      user.role !== 'doctor' &&
+      appointment.patientId !== parseInt(user.id)
     ) {
       return NextResponse.json(
         { error: 'You do not have permission to create reminders for this appointment' },
