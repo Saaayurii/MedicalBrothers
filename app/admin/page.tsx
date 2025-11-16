@@ -5,8 +5,6 @@ import DoctorsList from '@/components/admin/DoctorsList';
 import EmergencyCalls from '@/components/admin/EmergencyCalls';
 import Statistics from '@/components/admin/Statistics';
 
-export const dynamic = 'force-dynamic';
-
 async function getAdminData() {
   try {
     const [appointments, doctors, emergencies, stats] = await Promise.all([
