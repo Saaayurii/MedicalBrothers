@@ -63,9 +63,31 @@ async function getAdminData() {
   }
 }
 
-export default async function AdminPage() {
+// Async Server Component that fetches data
+async function AdminContent() {
   const data = await getAdminData();
 
+  return (
+    <>
+      {/* Statistics */}
+      <Statistics stats={data.stats} />
+
+      {/* Emergency Calls */}
+      {data.emergencies.length > 0 && <EmergencyCalls emergencies={data.emergencies} />}
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Appointments */}
+        <AppointmentsList appointments={data.appointments} />
+
+        {/* Doctors */}
+        <DoctorsList doctors={data.doctors} />
+      </div>
+    </>
+  );
+}
+
+export default function AdminPage() {
   return (
     <main className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -87,30 +109,20 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        {/* Statistics */}
-        <Suspense fallback={<div className="cyber-card p-6 animate-pulse">Загрузка статистики...</div>}>
-          <Statistics stats={data.stats} />
+        {/* All data fetching wrapped in Suspense */}
+        <Suspense
+          fallback={
+            <div className="space-y-8">
+              <div className="cyber-card p-6 animate-pulse">Загрузка данных...</div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="cyber-card p-6 animate-pulse">Загрузка записей...</div>
+                <div className="cyber-card p-6 animate-pulse">Загрузка врачей...</div>
+              </div>
+            </div>
+          }
+        >
+          <AdminContent />
         </Suspense>
-
-        {/* Emergency Calls */}
-        {data.emergencies.length > 0 && (
-          <Suspense fallback={<div className="cyber-card p-6 animate-pulse">Загрузка вызовов...</div>}>
-            <EmergencyCalls emergencies={data.emergencies} />
-          </Suspense>
-        )}
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Appointments */}
-          <Suspense fallback={<div className="cyber-card p-6 animate-pulse">Загрузка записей...</div>}>
-            <AppointmentsList appointments={data.appointments} />
-          </Suspense>
-
-          {/* Doctors */}
-          <Suspense fallback={<div className="cyber-card p-6 animate-pulse">Загрузка врачей...</div>}>
-            <DoctorsList doctors={data.doctors} />
-          </Suspense>
-        </div>
       </div>
     </main>
   );
