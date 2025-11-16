@@ -1,19 +1,12 @@
 'use client';
 
-interface Consultation {
-  id: number;
-  symptoms: string;
-  aiResponse: string | null;
-  recommendedSpecialty: string | null;
-  severityLevel: string | null;
-  createdAt: Date;
-  patient: {
-    name: string | null;
-    phone: string | null;
-  } | null;
-}
+import type { Consultation, Patient } from '@prisma/client';
 
-export default function RecentConsultations({ consultations }: { consultations: Consultation[] }) {
+type ConsultationWithPatient = Consultation & {
+  patient: Patient | null;
+};
+
+export default function RecentConsultations({ consultations }: { consultations: ConsultationWithPatient[] }) {
   if (consultations.length === 0) return null;
 
   return (

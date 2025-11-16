@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { unstable_noStore as noStore } from 'next/cache';
+import { connection } from 'next/server';
 import prisma from '@/lib/prisma';
 import AppointmentsList from '@/components/admin/AppointmentsList';
 import DoctorsList from '@/components/admin/DoctorsList';
@@ -10,6 +11,7 @@ import QuickActions from '@/components/admin/QuickActions';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
+  await connection(); // Access request data before using new Date()
 
   // Return mock data during build or when DB is unavailable
   const mockData = {

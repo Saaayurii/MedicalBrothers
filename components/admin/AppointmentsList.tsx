@@ -1,18 +1,13 @@
 'use client';
 
-interface Appointment {
-  id: number;
-  appointment_date: string;
-  appointment_time: string;
-  doctor_name: string;
-  specialty: string;
-  patient_name: string;
-  phone: string;
-  status: string;
-  symptoms: string;
-}
+import type { Appointment, Doctor, Patient } from '@prisma/client';
 
-export default function AppointmentsList({ appointments }: { appointments: Appointment[] }) {
+type AppointmentWithRelations = Appointment & {
+  doctor: Doctor;
+  patient: Patient | null;
+};
+
+export default function AppointmentsList({ appointments }: { appointments: AppointmentWithRelations[] }) {
   return (
     <div className="cyber-card p-6">
       <h2 className="text-2xl font-bold mb-6 text-cyan-400">
@@ -33,8 +28,8 @@ export default function AppointmentsList({ appointments }: { appointments: Appoi
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h3 className="font-bold text-lg">{appointment.doctor_name}</h3>
-                  <p className="text-sm text-gray-400">{appointment.specialty}</p>
+                  <h3 className="font-bold text-lg">{appointment.doctor.name}</h3>
+                  <p className="text-sm text-gray-400">{appointment.doctor.specialty}</p>
                 </div>
                 <StatusBadge status={appointment.status} />
               </div>
@@ -42,19 +37,19 @@ export default function AppointmentsList({ appointments }: { appointments: Appoi
               <div className="grid grid-cols-2 gap-2 text-sm mt-3">
                 <div>
                   <span className="text-gray-400">Пациент:</span>
-                  <p className="font-semibold">{appointment.patient_name || 'Не указан'}</p>
+                  <p className="font-semibold">{appointment.patient?.name || 'Не указан'}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Телефон:</span>
-                  <p className="font-semibold">{appointment.phone || 'Не указан'}</p>
+                  <p className="font-semibold">{appointment.patient?.phone || 'Не указан'}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Дата:</span>
-                  <p className="font-semibold">{formatDate(appointment.appointment_date)}</p>
+                  <p className="font-semibold">{formatDate(appointment.appointmentDate)}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Время:</span>
-                  <p className="font-semibold">{appointment.appointment_time}</p>
+                  <p className="font-semibold">{formatTime(appointment.appointmentTime)}</p>
                 </div>
               </div>
 
@@ -99,7 +94,10 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
+function formatDate(date: Date): string {
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }

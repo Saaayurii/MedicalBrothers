@@ -1,14 +1,6 @@
 'use client';
 
-interface Doctor {
-  id: number;
-  name: string;
-  specialty: string;
-  experience_years: number;
-  is_active: boolean;
-  phone: string;
-  email: string;
-}
+import type { Doctor } from '@prisma/client';
 
 export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
   return (
@@ -22,21 +14,21 @@ export default function DoctorsList({ doctors }: { doctors: Doctor[] }) {
           <div
             key={doctor.id}
             className={`bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4 hover:border-purple-400/50 transition-all ${
-              !doctor.is_active ? 'opacity-50' : ''
+              !doctor.isActive ? 'opacity-50' : ''
             }`}
           >
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h3 className="font-bold text-lg flex items-center gap-2">
                   {doctor.name}
-                  {doctor.is_active && (
+                  {doctor.isActive && (
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                   )}
                 </h3>
                 <p className="text-sm text-gray-400">{doctor.specialty}</p>
               </div>
               <span className="text-xs text-gray-500">
-                {doctor.experience_years} лет опыта
+                {doctor.experienceYears} лет опыта
               </span>
             </div>
 

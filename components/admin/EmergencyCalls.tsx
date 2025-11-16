@@ -1,15 +1,6 @@
 'use client';
 
-interface EmergencyCall {
-  id: number;
-  patient_name: string;
-  phone: string;
-  description: string;
-  location: string;
-  status: string;
-  priority: string;
-  created_at: string;
-}
+import type { EmergencyCall } from '@prisma/client';
 
 export default function EmergencyCalls({ emergencies }: { emergencies: EmergencyCall[] }) {
   return (
@@ -29,7 +20,7 @@ export default function EmergencyCalls({ emergencies }: { emergencies: Emergency
           >
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h3 className="font-bold text-lg">{emergency.patient_name || 'Анонимный'}</h3>
+                <h3 className="font-bold text-lg">{emergency.patientName || 'Анонимный'}</h3>
                 <p className="text-sm text-gray-400">{emergency.phone || 'Номер не указан'}</p>
               </div>
               <PriorityBadge priority={emergency.priority} />
@@ -47,7 +38,7 @@ export default function EmergencyCalls({ emergencies }: { emergencies: Emergency
             )}
 
             <div className="text-xs text-gray-500 mb-3">
-              {formatTime(emergency.created_at)}
+              {formatTime(emergency.createdAt)}
             </div>
 
             <div className="flex gap-2">
@@ -82,8 +73,7 @@ function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
-function formatTime(dateStr: string): string {
-  const date = new Date(dateStr);
+function formatTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
