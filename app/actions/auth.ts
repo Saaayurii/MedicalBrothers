@@ -80,6 +80,18 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
       };
     }
 
+    // Check if 2FA is enabled
+    if (admin.twoFactorEnabled) {
+      return {
+        success: false,
+        error: 'requires_2fa',
+        // @ts-ignore - adding extra fields for 2FA
+        requires2FA: true,
+        userId: admin.id,
+        userType: 'admin',
+      };
+    }
+
     // Создаём сессию
     await createSession(admin.id);
 

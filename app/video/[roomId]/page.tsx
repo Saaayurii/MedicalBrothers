@@ -1,19 +1,23 @@
+import { redirect } from 'next/navigation';
 import VideoConsultationRoom from '@/components/video/VideoConsultationRoom';
+import { getCurrentUser } from '@/lib/unified-auth';
 
-export default function VideoPage({
+export default async function VideoPage({
   params,
 }: {
   params: { roomId: string };
 }) {
-  // TODO: Get userId and userName from session/auth
-  const userId = 'user-123';
-  const userName = 'Current User';
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect('/patient/login');
+  }
 
   return (
     <VideoConsultationRoom
       roomId={params.roomId}
-      userId={userId}
-      userName={userName}
+      userId={user.id}
+      userName={user.name}
       onLeave={() => {
         window.location.href = '/appointments';
       }}
