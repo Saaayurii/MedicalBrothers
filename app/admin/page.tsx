@@ -15,6 +15,11 @@ import Dashboard from '@/components/admin/Dashboard';
 import AppointmentsCalendar from '@/components/admin/AppointmentsCalendar';
 import RealTimeUpdater from '@/components/admin/RealTimeUpdater';
 import AdvancedAnalytics from '@/components/admin/AdvancedAnalytics';
+import ReviewsManagement from '@/components/admin/ReviewsManagement';
+import MedicalRecords from '@/components/admin/MedicalRecords';
+import LabOrders from '@/components/admin/LabOrders';
+import LoyaltyProgram from '@/components/admin/LoyaltyProgram';
+import NotificationCenter from '@/components/NotificationCenter';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
@@ -201,6 +206,33 @@ async function AdminContent() {
         <AdvancedAnalytics appointments={data.allAppointments} />
       </div>
 
+      {/* New Feature Management Section */}
+      <div className="space-y-8">
+        {/* Reviews Management */}
+        <div className="cyber-card p-6">
+          <h2 className="text-2xl font-bold mb-6 text-cyan-400">⭐ Управление Отзывами</h2>
+          <ReviewsManagement />
+        </div>
+
+        {/* Medical Records */}
+        <div className="cyber-card p-6">
+          <h2 className="text-2xl font-bold mb-6 text-cyan-400">📋 Медицинские Карты</h2>
+          <MedicalRecords />
+        </div>
+
+        {/* Lab Orders */}
+        <div className="cyber-card p-6">
+          <h2 className="text-2xl font-bold mb-6 text-cyan-400">🧪 Заказы Анализов</h2>
+          <LabOrders />
+        </div>
+
+        {/* Loyalty Program */}
+        <div className="cyber-card p-6">
+          <h2 className="text-2xl font-bold mb-6 text-cyan-400">🎁 Программа Лояльности</h2>
+          <LoyaltyProgram />
+        </div>
+      </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Appointments */}
@@ -228,6 +260,9 @@ export default async function AdminPage() {
     <main className="min-h-screen">
       {/* Real-time updater for automatic data refresh */}
       <RealTimeUpdater interval={30000} />
+
+      {/* Notification Center */}
+      <NotificationCenter />
 
       {/* Header */}
       <AdminHeader username={session.username} role={session.role} />

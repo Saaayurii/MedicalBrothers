@@ -3,18 +3,20 @@
 import { useState } from 'react';
 
 interface CreateMedicalRecordProps {
-  patientId: number;
-  patientName: string;
+  patientId?: number;
+  patientName?: string;
   appointmentId?: number;
   onSuccess?: () => void;
 }
 
 export default function CreateMedicalRecord({
-  patientId,
-  patientName,
+  patientId: initialPatientId,
+  patientName: initialPatientName,
   appointmentId,
   onSuccess,
 }: CreateMedicalRecordProps) {
+  const [patientId, setPatientId] = useState(initialPatientId || 0);
+  const [patientName, setPatientName] = useState(initialPatientName || '');
   const [formData, setFormData] = useState({
     recordType: 'note',
     title: '',

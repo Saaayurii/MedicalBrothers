@@ -3,18 +3,20 @@
 import { useState } from 'react';
 
 interface CreateLabOrderProps {
-  patientId: number;
-  patientName: string;
+  patientId?: number;
+  patientName?: string;
   appointmentId?: number;
   onSuccess?: () => void;
 }
 
 export default function CreateLabOrder({
-  patientId,
-  patientName,
+  patientId: initialPatientId,
+  patientName: initialPatientName,
   appointmentId,
   onSuccess,
 }: CreateLabOrderProps) {
+  const [patientId, setPatientId] = useState(initialPatientId || 0);
+  const [patientName, setPatientName] = useState(initialPatientName || '');
   const [formData, setFormData] = useState({
     labName: '',
     testType: '',

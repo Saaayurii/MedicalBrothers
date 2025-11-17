@@ -3,18 +3,20 @@
 import { useState } from 'react';
 
 interface ReviewFormProps {
-  doctorId: number;
-  doctorName: string;
+  doctorId?: number;
+  doctorName?: string;
   appointmentId?: number;
   onSuccess?: () => void;
 }
 
 export default function ReviewForm({
-  doctorId,
-  doctorName,
+  doctorId: initialDoctorId,
+  doctorName: initialDoctorName,
   appointmentId,
   onSuccess,
 }: ReviewFormProps) {
+  const [doctorId, setDoctorId] = useState(initialDoctorId || 0);
+  const [doctorName, setDoctorName] = useState(initialDoctorName || '');
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);

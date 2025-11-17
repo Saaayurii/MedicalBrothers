@@ -8,6 +8,10 @@ async function main() {
 
   // Clear existing data (optional, for development)
   await prisma.conversationLog.deleteMany();
+  await prisma.loyaltyPoints.deleteMany();
+  await prisma.labOrder.deleteMany();
+  await prisma.medicalRecord.deleteMany();
+  await prisma.review.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.consultation.deleteMany();
   await prisma.emergencyCall.deleteMany();
@@ -399,6 +403,155 @@ async function main() {
   ]);
 
   console.log(`✅ Created ${clinicInfo.length} clinic info entries`);
+
+  // Seed Reviews
+  const reviews = await Promise.all([
+    prisma.review.create({
+      data: {
+        doctorId: doctors[0].id,
+        patientId: patients[0].id,
+        appointmentId: appointments[0].id,
+        rating: 5,
+        comment: 'Отличный врач! Очень внимательный и профессиональный. Подробно объяснил диагноз и назначил эффективное лечение.',
+        isVerified: true,
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        doctorId: doctors[1].id,
+        patientId: patients[1].id,
+        rating: 5,
+        comment: 'Мария Сидорова - замечательный кардиолог. Помогла разобраться с проблемами сердечного ритма.',
+        isVerified: true,
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        doctorId: doctors[2].id,
+        patientId: patients[2].id,
+        rating: 4,
+        comment: 'Хороший терапевт, но было долгое ожидание приёма.',
+        isVerified: true,
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        doctorId: doctors[0].id,
+        patientId: patients[1].id,
+        rating: 5,
+        comment: 'Рекомендую! Профессионал своего дела.',
+        isVerified: true,
+        isApproved: false, // Pending review
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${reviews.length} reviews`);
+
+  // Seed Medical Records
+  const medicalRecords = await Promise.all([
+    prisma.medicalRecord.create({
+      data: {
+        patientId: patients[0].id,
+        doctorId: doctors[0].id,
+        recordType: 'diagnosis',
+        title: 'Консультация кардиолога',
+        description: 'Рекомендован контроль АД ежедневно, повторный приём через 2 недели',
+        diagnosis: 'Гипертоническая болезнь 2 степени',
+        prescription: 'Амлодипин 5мг 1 раз в день, Лозартан 50мг утром',
+        isConfidential: false,
+      },
+    }),
+    prisma.medicalRecord.create({
+      data: {
+        patientId: patients[1].id,
+        doctorId: doctors[1].id,
+        recordType: 'prescription',
+        title: 'Рецепт кардиолога',
+        description: 'ЭКГ контроль через 1 месяц',
+        diagnosis: 'Аритмия',
+        prescription: 'Бета-блокаторы по схеме',
+        isConfidential: false,
+      },
+    }),
+    prisma.medicalRecord.create({
+      data: {
+        patientId: patients[2].id,
+        doctorId: doctors[2].id,
+        recordType: 'lab_result',
+        title: 'Результаты анализов',
+        description: 'Постельный режим, обильное питьё',
+        diagnosis: 'ОРВИ',
+        labResults: 'Общий анализ крови: лейкоциты повышены',
+        isConfidential: false,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${medicalRecords.length} medical records`);
+
+  // Seed Lab Orders
+  const labOrders = await Promise.all([
+    prisma.labOrder.create({
+      data: {
+        patientId: patients[0].id,
+        doctorId: doctors[0].id,
+        orderNumber: 'LAB-2024-001',
+        labName: 'Клинический анализ крови',
+        testType: 'Развёрнутый анализ крови с лейкоформулой',
+        status: 'completed',
+        results: 'Гемоглобин 145 г/л, эритроциты 4.8, лейкоциты 6.2',
+      },
+    }),
+    prisma.labOrder.create({
+      data: {
+        patientId: patients[1].id,
+        doctorId: doctors[1].id,
+        orderNumber: 'LAB-2024-002',
+        labName: 'Биохимический анализ крови',
+        testType: 'Глюкоза, холестерин, АЛТ, АСТ',
+        status: 'processing',
+      },
+    }),
+    prisma.labOrder.create({
+      data: {
+        patientId: patients[2].id,
+        doctorId: doctors[2].id,
+        orderNumber: 'LAB-2024-003',
+        labName: 'Общий анализ мочи',
+        testType: 'Стандартный анализ мочи',
+        status: 'pending',
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${labOrders.length} lab orders`);
+
+  // Seed Loyalty Points
+  const loyaltyPoints = await Promise.all([
+    prisma.loyaltyPoints.create({
+      data: {
+        patientId: patients[0].id,
+        points: 2500,
+        tier: 'silver',
+      },
+    }),
+    prisma.loyaltyPoints.create({
+      data: {
+        patientId: patients[1].id,
+        points: 500,
+        tier: 'bronze',
+      },
+    }),
+    prisma.loyaltyPoints.create({
+      data: {
+        patientId: patients[2].id,
+        points: 6000,
+        tier: 'gold',
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${loyaltyPoints.length} loyalty points entries`);
 
   console.log('🎉 Seeding completed!');
 }

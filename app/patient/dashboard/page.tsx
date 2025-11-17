@@ -5,6 +5,9 @@ import { requirePatientAuth } from '@/lib/patient-auth';
 import prisma from '@/lib/prisma';
 import { logoutAction } from '@/app/actions/patient';
 import AppointmentCard from '@/components/AppointmentCard';
+import PatientReviews from '@/components/patient/Reviews';
+import PatientMedicalRecords from '@/components/patient/MedicalRecords';
+import LoyaltyPoints from '@/components/patient/LoyaltyPoints';
 
 async function getPatientData(patientId: number) {
   noStore();
@@ -226,6 +229,24 @@ export default async function PatientDashboardPage() {
                 </div>
               </div>
             )}
+
+            {/* Loyalty Points */}
+            <div className="cyber-card p-6 mt-6">
+              <h2 className="text-2xl font-bold mb-6 text-yellow-400">🎁 Программа Лояльности</h2>
+              <LoyaltyPoints />
+            </div>
+
+            {/* Medical Records */}
+            <div className="cyber-card p-6 mt-6">
+              <h2 className="text-2xl font-bold mb-6 text-green-400">📋 Мои Медицинские Карты</h2>
+              <PatientMedicalRecords />
+            </div>
+
+            {/* Reviews */}
+            <div className="cyber-card p-6 mt-6">
+              <h2 className="text-2xl font-bold mb-6 text-pink-400">⭐ Оставить Отзыв</h2>
+              <PatientReviews />
+            </div>
           </div>
         </div>
       </div>
