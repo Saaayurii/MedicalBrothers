@@ -10,7 +10,7 @@ export default function ChatPage({
   const userName = 'Current User';
 
   return (
-    <div className="h-screen p-4">
+    <div className="h-screen p-2 sm:p-3 md:p-4">
       <ChatRoom
         roomId={params.roomId}
         userId={userId}

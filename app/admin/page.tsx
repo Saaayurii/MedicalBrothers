@@ -184,7 +184,7 @@ async function AdminContent() {
   const data = await getAdminData();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       {/* Statistics */}
       <Statistics stats={data.stats} />
 
@@ -201,40 +201,40 @@ async function AdminContent() {
       <AppointmentsCalendar appointments={data.appointments} />
 
       {/* Advanced Analytics */}
-      <div className="cyber-card p-6">
-        <h2 className="text-2xl font-bold mb-6 text-cyan-400">📊 Расширенная Аналитика</h2>
+      <div className="cyber-card p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-cyan-400">📊 Расширенная Аналитика</h2>
         <AdvancedAnalytics appointments={data.allAppointments} />
       </div>
 
       {/* New Feature Management Section */}
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8">
         {/* Reviews Management */}
-        <div className="cyber-card p-6">
-          <h2 className="text-2xl font-bold mb-6 text-cyan-400">⭐ Управление Отзывами</h2>
+        <div className="cyber-card p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-cyan-400">⭐ Управление Отзывами</h2>
           <ReviewsManagement />
         </div>
 
         {/* Medical Records */}
-        <div className="cyber-card p-6">
-          <h2 className="text-2xl font-bold mb-6 text-cyan-400">📋 Медицинские Карты</h2>
+        <div className="cyber-card p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-cyan-400">📋 Медицинские Карты</h2>
           <MedicalRecords />
         </div>
 
         {/* Lab Orders */}
-        <div className="cyber-card p-6">
-          <h2 className="text-2xl font-bold mb-6 text-cyan-400">🧪 Заказы Анализов</h2>
+        <div className="cyber-card p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-cyan-400">🧪 Заказы Анализов</h2>
           <LabOrders />
         </div>
 
         {/* Loyalty Program */}
-        <div className="cyber-card p-6">
-          <h2 className="text-2xl font-bold mb-6 text-cyan-400">🎁 Программа Лояльности</h2>
+        <div className="cyber-card p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-cyan-400">🎁 Программа Лояльности</h2>
           <LoyaltyProgram />
         </div>
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {/* Appointments */}
         <AppointmentsList appointments={data.appointments} />
 
@@ -267,16 +267,16 @@ export default async function AdminPage() {
       {/* Header */}
       <AdminHeader username={session.username} role={session.role} />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
 
         {/* All data fetching wrapped in Suspense */}
         <Suspense
           fallback={
-            <div className="space-y-8">
-              <div className="cyber-card p-6 animate-pulse">Загрузка данных...</div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="cyber-card p-6 animate-pulse">Загрузка записей...</div>
-                <div className="cyber-card p-6 animate-pulse">Загрузка врачей...</div>
+            <div className="space-y-4 sm:space-y-6 md:space-y-8">
+              <div className="cyber-card p-4 sm:p-6 animate-pulse text-sm sm:text-base">Загрузка данных...</div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                <div className="cyber-card p-4 sm:p-6 animate-pulse text-sm sm:text-base">Загрузка записей...</div>
+                <div className="cyber-card p-4 sm:p-6 animate-pulse text-sm sm:text-base">Загрузка врачей...</div>
               </div>
             </div>
           }
