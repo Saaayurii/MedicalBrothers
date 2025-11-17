@@ -67,13 +67,6 @@ function sendToAnalytics(metric: PerformanceMetric) {
   }
 }
 
-// Declare gtag type for TypeScript
-declare global {
-  interface Window {
-    gtag?: (command: string, ...args: any[]) => void;
-  }
-}
-
 // Performance marker utility
 export class PerformanceTracker {
   private marks: Map<string, number> = new Map();
