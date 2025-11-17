@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connection } from 'next/server';
+import { logger } from '@/lib/logger';
+import { sanitizeString } from '@/lib/sanitize';
 
 /**
  * @swagger
@@ -48,19 +50,32 @@ export async function POST(request: NextRequest) {
   try {
     const { endpoint } = await request.json();
 
+    // Validate endpoint
+    if (!endpoint) {
+      return NextResponse.json(
+        { success: false, error: 'Endpoint is required' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize endpoint
+    const sanitizedEndpoint = sanitizeString(endpoint);
+
     // TODO: Remove subscription from database
     // await prisma.pushSubscription.deleteMany({
-    //   where: { endpoint },
+    //   where: { endpoint: sanitizedEndpoint },
     // });
 
-    console.log('Push unsubscription received:', endpoint);
+    logger.info('Push subscription removed', {
+      endpoint: sanitizedEndpoint.substring(0, 50) + '...',
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Unsubscribed successfully',
     });
   } catch (error) {
-    console.error('Error removing push subscription:', error);
+    logger.error('Failed to remove push subscription', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to unsubscribe' },
       { status: 500 }

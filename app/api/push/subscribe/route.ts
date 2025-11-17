@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connection } from 'next/server';
+import { logger } from '@/lib/logger';
+import { sanitizeString } from '@/lib/sanitize';
 
 // This is a placeholder for push subscription storage
 // In production, you would store subscriptions in a database
@@ -65,23 +67,39 @@ export async function POST(request: NextRequest) {
   try {
     const subscription = await request.json();
 
-    // TODO: Store subscription in database
-    // await prisma.pushSubscription.create({
-    //   data: {
-    //     endpoint: subscription.endpoint,
+    // Validate subscription data
+    if (!subscription.endpoint || !subscription.keys) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid subscription data' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize endpoint
+    const sanitizedEndpoint = sanitizeString(subscription.endpoint);
+
+    // TODO: Store subscription in database with user association
+    // const userId = request.headers.get('x-user-id'); // from auth
+    // await prisma.pushSubscription.upsert({
+    //   where: { endpoint: sanitizedEndpoint },
+    //   update: { keys: subscription.keys },
+    //   create: {
+    //     endpoint: sanitizedEndpoint,
     //     keys: subscription.keys,
-    //     // associate with user/patient if logged in
+    //     userId: userId,
     //   },
     // });
 
-    console.log('Push subscription received:', subscription.endpoint);
+    logger.info('Push subscription saved', {
+      endpoint: sanitizedEndpoint.substring(0, 50) + '...',
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Subscription saved',
     });
   } catch (error) {
-    console.error('Error saving push subscription:', error);
+    logger.error('Failed to save push subscription', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to save subscription' },
       { status: 500 }

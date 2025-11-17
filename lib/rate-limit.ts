@@ -1,109 +1,129 @@
-import { Ratelimit } from '@upstash/ratelimit';
 import redis from './redis';
 
-// Create rate limiters with different configurations
-// If Redis is not configured, these will be null and rate limiting will be skipped
-
-/**
- * Strict rate limit for authentication attempts
- * 5 requests per 15 minutes
- */
-export const authRateLimit = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(5, '15 m'),
-      analytics: true,
-      prefix: '@upstash/ratelimit:auth',
-    })
-  : null;
-
-/**
- * API rate limit for general API endpoints
- * 100 requests per minute
- */
-export const apiRateLimit = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(100, '1 m'),
-      analytics: true,
-      prefix: '@upstash/ratelimit:api',
-    })
-  : null;
-
-/**
- * Strict rate limit for password reset
- * 3 requests per hour
- */
-export const passwordResetRateLimit = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(3, '1 h'),
-      analytics: true,
-      prefix: '@upstash/ratelimit:password-reset',
-    })
-  : null;
-
-/**
- * Admin actions rate limit
- * 500 requests per minute
- */
-export const adminRateLimit = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(500, '1 m'),
-      analytics: true,
-      prefix: '@upstash/ratelimit:admin',
-    })
-  : null;
-
-/**
- * Check rate limit and return result
- */
-export async function checkRateLimit(
-  identifier: string,
-  limiter: Ratelimit | null
-): Promise<{
+interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;
   reset: number;
-}> {
-  if (!limiter) {
-    // If rate limiting is not configured, allow all requests
+}
+
+// In-memory store for rate limiting when Redis is not available
+const inMemoryStore = new Map<string, { count: number; resetTime: number }>();
+
+// Cleanup old entries every minute
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of inMemoryStore.entries()) {
+    if (value.resetTime < now) {
+      inMemoryStore.delete(key);
+    }
+  }
+}, 60000);
+
+export async function rateLimit(
+  identifier: string,
+  limit: number = 100,
+  windowMs: number = 900000 // 15 minutes
+): Promise<RateLimitResult> {
+  const key = `rate_limit:${identifier}`;
+  const now = Date.now();
+  const resetTime = now + windowMs;
+
+  try {
+    // Try Redis first
+    if (redis) {
+      const current = await redis.get<string>(key);
+      const count = current ? parseInt(current, 10) : 0;
+
+      if (count >= limit) {
+        const ttl = await redis.ttl(key);
+        return {
+          success: false,
+          limit,
+          remaining: 0,
+          reset: now + ttl * 1000,
+        };
+      }
+
+      const newCount = await redis.incr(key);
+      if (newCount === 1) {
+        await redis.pexpire(key, windowMs);
+      }
+
+      return {
+        success: true,
+        limit,
+        remaining: Math.max(0, limit - newCount),
+        reset: resetTime,
+      };
+    }
+  } catch (error) {
+    console.error('Redis rate limit error:', error);
+  }
+
+  // Fallback to in-memory
+  const stored = inMemoryStore.get(key);
+
+  if (stored && stored.resetTime > now) {
+    if (stored.count >= limit) {
+      return {
+        success: false,
+        limit,
+        remaining: 0,
+        reset: stored.resetTime,
+      };
+    }
+
+    stored.count++;
     return {
       success: true,
-      limit: 0,
-      remaining: 0,
-      reset: 0,
+      limit,
+      remaining: Math.max(0, limit - stored.count),
+      reset: stored.resetTime,
     };
   }
 
-  try {
-    const result = await limiter.limit(identifier);
-    return {
-      success: result.success,
-      limit: result.limit,
-      remaining: result.remaining,
-      reset: result.reset,
-    };
-  } catch (error) {
-    console.error('Rate limit check error:', error);
-    // On error, allow the request to proceed
-    return {
-      success: true,
-      limit: 0,
-      remaining: 0,
-      reset: 0,
-    };
-  }
+  // New entry
+  inMemoryStore.set(key, { count: 1, resetTime });
+  return {
+    success: true,
+    limit,
+    remaining: limit - 1,
+    reset: resetTime,
+  };
+}
+
+export function getRateLimitHeaders(result: RateLimitResult): Record<string, string> {
+  return {
+    'X-RateLimit-Limit': result.limit.toString(),
+    'X-RateLimit-Remaining': result.remaining.toString(),
+    'X-RateLimit-Reset': new Date(result.reset).toISOString(),
+  };
 }
 
 /**
- * Get client identifier from request headers
+ * Get client identifier from headers (for backward compatibility)
  */
-export function getClientIdentifier(headers: Headers): string {
-  const forwarded = headers.get('x-forwarded-for');
-  const realIp = headers.get('x-real-ip');
-  const ip = forwarded?.split(',')[0] || realIp || 'unknown';
-  return ip;
+export function getClientIdentifier(headersList: Headers): string {
+  const forwarded = headersList.get('x-forwarded-for');
+  const ip = forwarded?.split(',')[0].trim() || headersList.get('x-real-ip') || 'unknown';
+  return `client:${ip}`;
+}
+
+/**
+ * Rate limit configuration for authentication attempts
+ */
+export const authRateLimit = {
+  limit: 5, // 5 attempts
+  windowMs: 900000, // 15 minutes
+};
+
+/**
+ * Check rate limit (wrapper for backward compatibility)
+ */
+export async function checkRateLimit(
+  identifier: string,
+  config: { limit: number; windowMs: number } = authRateLimit
+): Promise<RateLimitResult> {
+  return rateLimit(identifier, config.limit, config.windowMs);
 }
