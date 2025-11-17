@@ -12,21 +12,29 @@ export default async function AppointmentsPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      appointmentDate: {
-        gte: today,
+  let appointments: Array<any> = [];
+
+  try {
+    appointments = await prisma.appointment.findMany({
+      where: {
+        appointmentDate: {
+          gte: today,
+        },
       },
-    },
-    include: {
-      doctor: true,
-      patient: true,
-    },
-    orderBy: [
-      { appointmentDate: 'asc' },
-      { appointmentTime: 'asc' },
-    ],
-  });
+      include: {
+        doctor: true,
+        patient: true,
+      },
+      orderBy: [
+        { appointmentDate: 'asc' },
+        { appointmentTime: 'asc' },
+      ],
+    });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    // Return empty array if database is not available
+    appointments = [];
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
