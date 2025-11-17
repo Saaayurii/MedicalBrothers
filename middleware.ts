@@ -34,6 +34,32 @@ export function middleware(request: NextRequest) {
         response.cookies.delete('admin_session');
       }
     }
+  }
+  // Проверяем пациентские роуты (кроме /patient/login и /patient/register)
+  else if (
+    pathname.startsWith('/patient/dashboard') ||
+    pathname.startsWith('/appointments') ||
+    pathname.startsWith('/chat/') ||
+    pathname.startsWith('/video/')
+  ) {
+    const patientSessionCookie = request.cookies.get('patient_session');
+
+    // Если нет сессии - редирект на логин
+    if (!patientSessionCookie) {
+      const loginUrl = new URL('/patient/login', request.url);
+      response = NextResponse.redirect(loginUrl);
+    } else {
+      // Проверяем валидность сессии
+      try {
+        JSON.parse(patientSessionCookie.value);
+        response = NextResponse.next();
+      } catch (error) {
+        // Невалидная сессия - редирект на логин
+        const loginUrl = new URL('/patient/login', request.url);
+        response = NextResponse.redirect(loginUrl);
+        response.cookies.delete('patient_session');
+      }
+    }
   } else {
     response = NextResponse.next();
   }

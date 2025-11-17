@@ -5,16 +5,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { loginAction } from '@/app/actions/patient';
+import { useRouter } from 'next/navigation';
 
 const loginSchema = z.object({
-  email: z.string().email('Некорректный email'),
+  identifier: z.string().min(1, 'Введите email или телефон'),
   password: z.string().min(1, 'Введите пароль'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -31,13 +32,28 @@ export default function LoginPage() {
     setSubmitMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append('email', data.email);
-      formData.append('password', data.password);
+      const response = await fetch('/api/auth/patient/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-      await loginAction(formData);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Ошибка входа');
+      }
+
+      setSubmitMessage({ type: 'success', text: result.message });
+
+      // Редирект на дашборд через 1 секунду
+      setTimeout(() => {
+        router.push('/patient/dashboard');
+      }, 1000);
     } catch (error: any) {
-      setSubmitMessage({ type: 'error', text: error?.error || 'Произошла ошибка при входе' });
+      setSubmitMessage({ type: 'error', text: error.message || 'Произошла ошибка при входе' });
     } finally {
       setIsSubmitting(false);
     }
@@ -71,18 +87,18 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Email */}
+            {/* Email или Телефон */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Email <span className="text-red-400">*</span>
+                Email или Телефон <span className="text-red-400">*</span>
               </label>
               <input
-                {...register('email')}
-                type="email"
-                placeholder="example@mail.com"
+                {...register('identifier')}
+                type="text"
+                placeholder="example@mail.com или +7 (999) 123-45-67"
                 className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
               />
-              {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>}
+              {errors.identifier && <p className="mt-1 text-sm text-red-400">{errors.identifier.message}</p>}
             </div>
 
             {/* Пароль */}

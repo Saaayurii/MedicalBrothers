@@ -5,15 +5,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { registerAction } from '@/app/actions/patient';
+import { useRouter } from 'next/navigation';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Минимум 2 символа'),
-  email: z.string().email('Некорректный email'),
+  email: z.string().email('Некорректный email').optional().or(z.literal('')),
   phone: z.string().min(10, 'Введите корректный номер телефона'),
   password: z.string().min(6, 'Минимум 6 символов'),
   confirmPassword: z.string().min(6, 'Минимум 6 символов'),
   dateOfBirth: z.string().optional(),
+  address: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Пароли не совпадают',
   path: ['confirmPassword'],
@@ -22,6 +23,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -38,17 +40,28 @@ export default function RegisterPage() {
     setSubmitMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append('name', data.name);
-      formData.append('email', data.email);
-      formData.append('phone', data.phone);
-      formData.append('password', data.password);
-      formData.append('confirmPassword', data.confirmPassword);
-      if (data.dateOfBirth) formData.append('dateOfBirth', data.dateOfBirth);
+      const response = await fetch('/api/auth/patient/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-      await registerAction(formData);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Ошибка регистрации');
+      }
+
+      setSubmitMessage({ type: 'success', text: result.message });
+
+      // Редирект на дашборд через 1 секунду
+      setTimeout(() => {
+        router.push('/patient/dashboard');
+      }, 1000);
     } catch (error: any) {
-      setSubmitMessage({ type: 'error', text: error?.error || 'Произошла ошибка при регистрации' });
+      setSubmitMessage({ type: 'error', text: error.message || 'Произошла ошибка при регистрации' });
     } finally {
       setIsSubmitting(false);
     }
