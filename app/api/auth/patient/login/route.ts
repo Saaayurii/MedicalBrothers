@@ -10,6 +10,105 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Введите пароль'),
 });
 
+/**
+ * @swagger
+ * /api/auth/patient/login:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Patient login
+ *     description: |
+ *       Authenticate patient using email or phone number with password.
+ *       Creates a session upon successful authentication (sets patient_session cookie).
+ *       Rate limited to 10 attempts per minute per IP.
+ *     operationId: loginPatient
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - identifier
+ *               - password
+ *             properties:
+ *               identifier:
+ *                 type: string
+ *                 description: Email or phone number
+ *                 example: "+79991234567"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Account password
+ *                 example: securePassword123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         headers:
+ *           Set-Cookie:
+ *             description: Session cookie (patient_session)
+ *             schema:
+ *               type: string
+ *               example: patient_session=abc123; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Вход выполнен успешно
+ *                 patient:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: Иван Иванов
+ *                     email:
+ *                       type: string
+ *                       nullable: true
+ *                       example: ivan@example.com
+ *                     phone:
+ *                       type: string
+ *                       example: "+79991234567"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         description: Unauthorized - Invalid credentials or inactive account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               invalidCredentials:
+ *                 summary: Invalid email/phone or password
+ *                 value:
+ *                   error: Неверный email/телефон или пароль
+ *               noPassword:
+ *                 summary: Password not set
+ *                 value:
+ *                   error: Пароль не установлен. Обратитесь к администратору.
+ *       429:
+ *         description: Too many login attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Слишком много попыток входа. Попробуйте позже.
+ *                 retryAfter:
+ *                   type: integer
+ *                   description: Seconds to wait before retry
+ *                   example: 60
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting for auth endpoints

@@ -33,6 +33,111 @@ const SYSTEM_PROMPT = `Вы - медицинский голосовой асси
 Адрес: г. Москва, ул. Примерная, д. 123
 Телефон: +7 (495) 123-45-67`;
 
+/**
+ * @swagger
+ * /api/voice/chat:
+ *   post:
+ *     tags:
+ *       - AI & Voice
+ *     summary: Voice-based AI medical consultation (OpenAI GPT-4)
+ *     description: |
+ *       AI-powered voice medical assistant using OpenAI GPT-4o-mini.
+ *
+ *       Features:
+ *       - Symptom analysis and severity detection
+ *       - Appointment booking intent recognition
+ *       - Specialty recommendation
+ *       - Consultation history saved to database
+ *       - Rate limited for voice API
+ *
+ *       Severity levels: normal, high, emergency
+ *       Saves consultations with patientId, symptoms, and AI response
+ *     operationId: voiceChat
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 description: User's transcribed voice message
+ *                 example: "Я хочу записаться к кардиологу"
+ *               conversationHistory:
+ *                 type: array
+ *                 description: Previous conversation messages
+ *                 items:
+ *                   $ref: '#/components/schemas/AIMessage'
+ *     responses:
+ *       200:
+ *         description: Voice consultation processed successfully
+ *         headers:
+ *           X-RateLimit-Limit:
+ *             schema:
+ *               type: integer
+ *             description: Rate limit
+ *           X-RateLimit-Remaining:
+ *             schema:
+ *               type: integer
+ *             description: Remaining requests
+ *           X-RateLimit-Reset:
+ *             schema:
+ *               type: string
+ *               format: date-time
+ *             description: Reset time
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   type: string
+ *                   description: AI assistant's response
+ *                   example: "Конечно! Я могу помочь записать вас к кардиологу. Какой день и время вам удобны?"
+ *                 isAppointmentRequest:
+ *                   type: boolean
+ *                   description: Whether this is an appointment request
+ *                   example: true
+ *                 specialty:
+ *                   type: string
+ *                   nullable: true
+ *                   description: Detected medical specialty
+ *                   example: "Кардиолог"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Превышен лимит запросов. Попробуйте позже."
+ *                 retryAfter:
+ *                   type: integer
+ *                   example: 60
+ *       500:
+ *         description: OpenAI API error or not configured
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               notConfigured:
+ *                 summary: API key not configured
+ *                 value:
+ *                   error: OpenAI API key not configured
+ *               apiFailed:
+ *                 summary: OpenAI API error
+ *                 value:
+ *                   error: Internal server error
+ */
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting

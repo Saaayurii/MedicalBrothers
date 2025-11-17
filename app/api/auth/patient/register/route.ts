@@ -14,6 +14,121 @@ const registerSchema = z.object({
   address: z.string().optional(),
 });
 
+/**
+ * @swagger
+ * /api/auth/patient/register:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Register new patient
+ *     description: |
+ *       Register a new patient account with credentials. Upon successful registration:
+ *       - Creates patient account with hashed password
+ *       - Automatically creates a session (sets patient_session cookie)
+ *       - Awards 100 welcome loyalty points
+ *       - Initializes loyalty tier as Bronze
+ *     operationId: registerPatient
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - phone
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 2
+ *                 description: Patient's full name
+ *                 example: Иван Иванов
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Patient's email address (optional)
+ *                 example: ivan@example.com
+ *               phone:
+ *                 type: string
+ *                 minLength: 10
+ *                 description: Patient's phone number (required, must be unique)
+ *                 example: "+79991234567"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 format: password
+ *                 description: Account password (min 6 characters)
+ *                 example: securePassword123
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 description: Patient's date of birth (optional)
+ *                 example: "1990-01-15"
+ *               address:
+ *                 type: string
+ *                 description: Patient's address (optional)
+ *                 example: "Москва, ул. Ленина, д. 1"
+ *     responses:
+ *       201:
+ *         description: Patient registered successfully
+ *         headers:
+ *           Set-Cookie:
+ *             description: Session cookie (patient_session)
+ *             schema:
+ *               type: string
+ *               example: patient_session=abc123; Path=/; HttpOnly; SameSite=Lax
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Регистрация успешна
+ *                 patient:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: Иван Иванов
+ *                     email:
+ *                       type: string
+ *                       example: ivan@example.com
+ *                     phone:
+ *                       type: string
+ *                       example: "+79991234567"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       409:
+ *         description: Conflict - Patient with this phone/email already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               error: Пациент с таким телефоном уже зарегистрирован
+ *       429:
+ *         description: Too many registration attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Слишком много попыток регистрации. Попробуйте позже.
+ *                 retryAfter:
+ *                   type: integer
+ *                   description: Seconds to wait before retry
+ *                   example: 60
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting for registration
