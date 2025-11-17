@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyPassword, createPatientSession } from '@/lib/auth';
 import { z } from 'zod';
+import { rateLimit, getClientIdentifier, RateLimitPresets } from '@/lib/rate-limit';
 
 // Валидация данных логина
 const loginSchema = z.object({
@@ -11,6 +12,20 @@ const loginSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting for auth endpoints
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = rateLimit(identifier, RateLimitPresets.AUTH);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Слишком много попыток входа. Попробуйте позже.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
 
     // Валидация входных данных

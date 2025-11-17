@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashPassword, createPatientSession } from '@/lib/auth';
 import { z } from 'zod';
+import { rateLimit, getClientIdentifier, RateLimitPresets } from '@/lib/rate-limit';
 
 // Валидация данных регистрации
 const registerSchema = z.object({
@@ -15,6 +16,20 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting for registration
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = rateLimit(identifier, RateLimitPresets.AUTH);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Слишком много попыток регистрации. Попробуйте позже.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
 
     // Валидация входных данных

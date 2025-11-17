@@ -1,129 +1,97 @@
-import redis from './redis';
+import { NextRequest } from 'next/server';
 
-interface RateLimitResult {
-  success: boolean;
-  limit: number;
-  remaining: number;
-  reset: number;
+interface RateLimitConfig {
+  interval: number; // Time window in milliseconds
+  limit: number; // Max requests per interval
 }
 
-// In-memory store for rate limiting when Redis is not available
-const inMemoryStore = new Map<string, { count: number; resetTime: number }>();
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
 
-// Cleanup old entries every minute
+// In-memory storage (use Redis in production)
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+// Cleanup old entries every 10 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [key, value] of inMemoryStore.entries()) {
-    if (value.resetTime < now) {
-      inMemoryStore.delete(key);
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (entry.resetAt < now) {
+      rateLimitStore.delete(key);
     }
   }
-}, 60000);
+}, 10 * 60 * 1000);
 
-export async function rateLimit(
+/**
+ * Rate limiting middleware
+ * @param identifier - Unique identifier (IP, user ID, etc.)
+ * @param config - Rate limit configuration
+ * @returns Object with success status and remaining requests
+ */
+export function rateLimit(
   identifier: string,
-  limit: number = 100,
-  windowMs: number = 900000 // 15 minutes
-): Promise<RateLimitResult> {
-  const key = `rate_limit:${identifier}`;
+  config: RateLimitConfig = { interval: 60000, limit: 10 } // Default: 10 req/min
+): { success: boolean; remaining: number; reset: number } {
   const now = Date.now();
-  const resetTime = now + windowMs;
+  const key = identifier;
 
-  try {
-    // Try Redis first
-    if (redis) {
-      const current = await redis.get<string>(key);
-      const count = current ? parseInt(current, 10) : 0;
+  let entry = rateLimitStore.get(key);
 
-      if (count >= limit) {
-        const ttl = await redis.ttl(key);
-        return {
-          success: false,
-          limit,
-          remaining: 0,
-          reset: now + ttl * 1000,
-        };
-      }
-
-      const newCount = await redis.incr(key);
-      if (newCount === 1) {
-        await redis.pexpire(key, windowMs);
-      }
-
-      return {
-        success: true,
-        limit,
-        remaining: Math.max(0, limit - newCount),
-        reset: resetTime,
-      };
-    }
-  } catch (error) {
-    console.error('Redis rate limit error:', error);
-  }
-
-  // Fallback to in-memory
-  const stored = inMemoryStore.get(key);
-
-  if (stored && stored.resetTime > now) {
-    if (stored.count >= limit) {
-      return {
-        success: false,
-        limit,
-        remaining: 0,
-        reset: stored.resetTime,
-      };
-    }
-
-    stored.count++;
-    return {
-      success: true,
-      limit,
-      remaining: Math.max(0, limit - stored.count),
-      reset: stored.resetTime,
+  // Create new entry or reset if interval passed
+  if (!entry || entry.resetAt < now) {
+    entry = {
+      count: 0,
+      resetAt: now + config.interval,
     };
+    rateLimitStore.set(key, entry);
   }
 
-  // New entry
-  inMemoryStore.set(key, { count: 1, resetTime });
-  return {
-    success: true,
-    limit,
-    remaining: limit - 1,
-    reset: resetTime,
-  };
-}
+  // Increment counter
+  entry.count++;
 
-export function getRateLimitHeaders(result: RateLimitResult): Record<string, string> {
+  const remaining = Math.max(0, config.limit - entry.count);
+  const success = entry.count <= config.limit;
+
   return {
-    'X-RateLimit-Limit': result.limit.toString(),
-    'X-RateLimit-Remaining': result.remaining.toString(),
-    'X-RateLimit-Reset': new Date(result.reset).toISOString(),
+    success,
+    remaining,
+    reset: entry.resetAt,
   };
 }
 
 /**
- * Get client identifier from headers (for backward compatibility)
+ * Get client identifier from request
+ * Uses IP address or fallback to 'anonymous'
  */
-export function getClientIdentifier(headersList: Headers): string {
-  const forwarded = headersList.get('x-forwarded-for');
-  const ip = forwarded?.split(',')[0].trim() || headersList.get('x-real-ip') || 'unknown';
-  return `client:${ip}`;
+export function getClientIdentifier(request: NextRequest): string {
+  // Try to get IP from headers (works with proxies)
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
+
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  if (realIp) {
+    return realIp;
+  }
+
+  // Fallback
+  return 'anonymous';
 }
 
 /**
- * Rate limit configuration for authentication attempts
+ * Rate limit presets for different endpoints
  */
-export const authRateLimit = {
-  limit: 5, // 5 attempts
-  windowMs: 900000, // 15 minutes
+export const RateLimitPresets = {
+  // Strict limits for expensive operations
+  VOICE_API: { interval: 60000, limit: 20 }, // 20 req/min
+  AUTH: { interval: 60000, limit: 5 }, // 5 req/min for login/register
+
+  // Standard limits for regular API
+  API_STANDARD: { interval: 60000, limit: 60 }, // 60 req/min
+
+  // Generous limits for read operations
+  API_READ: { interval: 60000, limit: 100 }, // 100 req/min
 };
-
-/**
- * Check rate limit (wrapper for backward compatibility)
- */
-export async function checkRateLimit(
-  identifier: string,
-  config: { limit: number; windowMs: number } = authRateLimit
-): Promise<RateLimitResult> {
-  return rateLimit(identifier, config.limit, config.windowMs);
-}
