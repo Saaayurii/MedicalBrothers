@@ -1,119 +1,179 @@
-// Ollama client for Qwen model
+/**
+ * Ollama client for local Qwen model
+ */
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:latest';
-
-export interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+interface OllamaResponse {
+  model: string;
+  created_at: string;
+  response: string;
+  done: boolean;
 }
 
-export async function generateResponse(messages: Message[]): Promise<string> {
-  try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        messages,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          top_p: 0.9,
+interface OllamaStreamResponse {
+  model: string;
+  created_at: string;
+  response: string;
+  done: boolean;
+}
+
+export class OllamaClient {
+  private baseURL: string;
+  private model: string;
+
+  constructor(baseURL?: string, model?: string) {
+    this.baseURL = baseURL || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    this.model = model || process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+  }
+
+  /**
+   * Generate a response from Ollama
+   */
+  async generate(prompt: string, system?: string): Promise<string> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      }),
-    });
+        body: JSON.stringify({
+          model: this.model,
+          prompt,
+          system,
+          stream: false,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.statusText}`);
+      }
+
+      const data: OllamaResponse = await response.json();
+      return data.response;
+    } catch (error) {
+      console.error('Ollama generation error:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.message.content;
-  } catch (error) {
-    console.error('Error calling Ollama:', error);
-    throw error;
   }
-}
 
-export async function analyzeIntent(userInput: string): Promise<{
-  intent: 'appointment' | 'consultation' | 'info' | 'emergency' | 'greeting' | 'unknown';
-  confidence: number;
-  entities: Record<string, any>;
-}> {
-  const systemPrompt = `Ты - анализатор намерений для медицинского голосового помощника.
-Определи намерение пользователя из следующих категорий:
-- appointment: запись на приём к врачу
-- consultation: консультация по симптомам
-- info: справочная информация (режим работы, цены, услуги)
-- emergency: экстренная ситуация, вызов скорой
-- greeting: приветствие
-- unknown: неизвестное намерение
+  /**
+   * Chat with Ollama using conversation history
+   */
+  async chat(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>): Promise<string> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages,
+          stream: false,
+        }),
+      });
 
-Также извлеки важные сущности (имена врачей, специальности, симптомы, даты).
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.statusText}`);
+      }
 
-Ответь в формате JSON:
-{
-  "intent": "тип намерения",
-  "confidence": 0.95,
-  "entities": {
-    "specialty": "кардиолог",
-    "doctor_name": "Иван Петров",
-    "symptoms": ["головная боль", "температура"],
-    "date": "завтра"
-  }
-}`;
-
-  try {
-    const response = await generateResponse([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userInput },
-    ]);
-
-    // Try to parse JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const data = await response.json();
+      return data.message.content;
+    } catch (error) {
+      console.error('Ollama chat error:', error);
+      throw error;
     }
+  }
 
-    // Fallback
-    return {
-      intent: 'unknown',
-      confidence: 0.5,
-      entities: {},
-    };
-  } catch (error) {
-    console.error('Error analyzing intent:', error);
-    return {
-      intent: 'unknown',
-      confidence: 0,
-      entities: {},
-    };
+  /**
+   * Stream response from Ollama
+   */
+  async *streamGenerate(prompt: string, system?: string): AsyncGenerator<string> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          prompt,
+          system,
+          stream: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const data: OllamaStreamResponse = JSON.parse(line);
+              if (data.response) {
+                yield data.response;
+              }
+            } catch (e) {
+              console.warn('Failed to parse line:', line);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Ollama stream error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if Ollama is available
+   */
+  async isAvailable(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/tags`, {
+        method: 'GET',
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * List available models
+   */
+  async listModels(): Promise<string[]> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/tags`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.models.map((model: any) => model.name);
+    } catch (error) {
+      console.error('Ollama list models error:', error);
+      throw error;
+    }
   }
 }
 
-export async function generateMedicalAdvice(symptoms: string): Promise<string> {
-  const systemPrompt = `Ты - медицинский консультант AI.
-Пациент описывает свои симптомы. Твоя задача:
-1. Проанализировать симптомы
-2. Определить возможные причины (не диагноз!)
-3. Оценить срочность (низкая, средняя, высокая, экстренная)
-4. Порекомендовать специалиста
-5. Дать общие рекомендации
-
-ВАЖНО: Ты НЕ ставишь диагнозы! Только даёшь общую информацию и рекомендуешь обратиться к врачу.
-
-Ответь понятным языком, дружелюбно и с заботой о пациенте.`;
-
-  try {
-    return await generateResponse([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Симптомы: ${symptoms}` },
-    ]);
-  } catch (error) {
-    console.error('Error generating medical advice:', error);
-    return 'Извините, не могу обработать запрос. Рекомендую обратиться к врачу напрямую.';
-  }
-}
+// Singleton instance
+export const ollama = new OllamaClient();

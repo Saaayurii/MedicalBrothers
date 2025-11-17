@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import VoiceAssistant from '@/components/VoiceAssistant';
 import ConversationHistory from '@/components/ConversationHistory';
+import OllamaChat from '@/components/OllamaChat';
 import Link from 'next/link';
 
 interface Message {
@@ -129,6 +130,23 @@ export default function AssistantPage() {
                 <p className="text-xs sm:text-sm">{example}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* AI Chat с Qwen (Ollama) */}
+        <div className="mt-8 sm:mt-10 md:mt-12">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-center">
+            💬 Чат с AI (Qwen через Ollama)
+          </h2>
+          <div className="max-w-4xl mx-auto">
+            <div className="h-[500px] sm:h-[600px]">
+              <OllamaChat />
+            </div>
+            <div className="mt-4 cyber-card p-4">
+              <p className="text-xs sm:text-sm text-gray-400 text-center">
+                🤖 Локальная модель Qwen 2.5 запущена через Ollama в Docker
+              </p>
+            </div>
           </div>
         </div>
       </div>

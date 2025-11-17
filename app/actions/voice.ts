@@ -1,6 +1,6 @@
 'use server';
 
-import { generateResponse, analyzeIntent, generateMedicalAdvice } from '@/lib/ollama';
+import { ollama } from '@/lib/ollama';
 import { query } from '@/lib/db';
 
 interface Message {
@@ -13,35 +13,35 @@ export async function processVoiceCommand(
   conversationHistory: Message[]
 ): Promise<string> {
   try {
-    // Analyze user intent
-    const intentAnalysis = await analyzeIntent(userInput);
-    console.log('Intent analysis:', intentAnalysis);
+    // Use ollama to analyze intent and generate response
+    const systemPrompt = `Проанализируй намерение пользователя и определи, что он хочет:
+- greeting (приветствие)
+- appointment (запись на приём)
+- consultation (консультация по симптомам)
+- info (информация о клинике)
+- emergency (экстренная ситуация)
+- unknown (другое)
 
-    // Log conversation
-    await query(
-      'INSERT INTO conversation_logs (user_input, intent, metadata) VALUES ($1, $2, $3)',
-      [userInput, intentAnalysis.intent, JSON.stringify(intentAnalysis)]
-    );
+Ответь одним словом из списка выше.`;
+
+    const intent = await ollama.generate(userInput, systemPrompt);
+    console.log('Intent analysis:', intent);
 
     // Route to appropriate handler based on intent
-    switch (intentAnalysis.intent) {
-      case 'greeting':
-        return handleGreeting();
+    const trimmedIntent = intent.trim().toLowerCase();
 
-      case 'appointment':
-        return await handleAppointment(userInput, intentAnalysis.entities);
-
-      case 'consultation':
-        return await handleConsultation(userInput, intentAnalysis.entities);
-
-      case 'info':
-        return await handleInfo(userInput, intentAnalysis.entities);
-
-      case 'emergency':
-        return await handleEmergency(userInput, intentAnalysis.entities);
-
-      default:
-        return await handleUnknown(userInput, conversationHistory);
+    if (trimmedIntent.includes('greeting') || trimmedIntent.includes('приветствие')) {
+      return handleGreeting();
+    } else if (trimmedIntent.includes('appointment') || trimmedIntent.includes('запись')) {
+      return await handleAppointment(userInput, {});
+    } else if (trimmedIntent.includes('consultation') || trimmedIntent.includes('консультац')) {
+      return await handleConsultation(userInput, {});
+    } else if (trimmedIntent.includes('info') || trimmedIntent.includes('информац')) {
+      return await handleInfo(userInput, {});
+    } else if (trimmedIntent.includes('emergency') || trimmedIntent.includes('экстрен')) {
+      return await handleEmergency(userInput, {});
+    } else {
+      return await handleUnknown(userInput, conversationHistory);
     }
   } catch (error) {
     console.error('Error processing voice command:', error);
@@ -123,7 +123,16 @@ async function handleConsultation(userInput: string, entities: any): Promise<str
     const symptoms = entities.symptoms?.join(', ') || userInput;
 
     // Get AI medical advice
-    const advice = await generateMedicalAdvice(symptoms);
+    const medicalPrompt = `Ты - медицинский консультант. Пациент описывает симптомы: "${symptoms}".
+
+Дай краткую рекомендацию (2-3 предложения):
+- Что это может быть (БЕЗ точного диагноза!)
+- Какие действия предпринять
+- К какому специалисту обратиться
+
+ВАЖНО: Не ставь диагноз, только общие рекомендации!`;
+
+    const advice = await ollama.generate(medicalPrompt);
 
     // Log consultation
     await query(
@@ -167,7 +176,7 @@ async function handleInfo(userInput: string, entities: any): Promise<string> {
 
 Отвечай кратко и по делу.`;
 
-    return await generateResponse([
+    return await ollama.chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userInput },
     ]);
@@ -216,7 +225,7 @@ async function handleUnknown(userInput: string, history: Message[]): Promise<str
     { role: 'user' as const, content: userInput },
   ];
 
-  return await generateResponse(messages);
+  return await ollama.chat(messages);
 }
 
 // Helper functions
