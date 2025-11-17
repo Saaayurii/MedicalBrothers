@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { Appointment, Doctor, Patient } from '@prisma/client';
 import { cancelAppointmentAction, confirmAppointmentAction } from '@/app/actions/admin';
 import AppointmentDetailsModal from './AppointmentDetailsModal';
+import PaymentButton from './patient/PaymentButton';
 
 type AppointmentWithRelations = Appointment & {
   doctor: Doctor;
@@ -121,23 +123,34 @@ export default function AppointmentCard({ appointment: initialAppointment }: App
       )}
 
       {/* Действия */}
-      <div className="flex gap-2 mt-4">
-        <button
-          onClick={() => setIsDetailsOpen(true)}
-          className="flex-1 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg text-sm transition-all"
-        >
-          📋 Подробнее
-        </button>
+      <div className="space-y-2 mt-4">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsDetailsOpen(true)}
+            className="flex-1 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg text-sm transition-all"
+          >
+            📋 Подробнее
+          </button>
 
-        {appointment.status === 'scheduled' && (
-          <>
-            <button
-              onClick={handleConfirm}
-              disabled={isProcessing}
-              className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? '...' : '✓'}
-            </button>
+          {appointment.status === 'scheduled' && (
+            <>
+              <button
+                onClick={handleConfirm}
+                disabled={isProcessing}
+                className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? '...' : '✓'}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isProcessing}
+                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? '...' : '✗'}
+              </button>
+            </>
+          )}
+          {appointment.status === 'confirmed' && (
             <button
               onClick={handleCancel}
               disabled={isProcessing}
@@ -145,16 +158,26 @@ export default function AppointmentCard({ appointment: initialAppointment }: App
             >
               {isProcessing ? '...' : '✗'}
             </button>
-          </>
-        )}
-        {appointment.status === 'confirmed' && (
-          <button
-            onClick={handleCancel}
-            disabled={isProcessing}
-            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isProcessing ? '...' : '✗'}
-          </button>
+          )}
+        </div>
+
+        {/* Payment and Video Call buttons */}
+        {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && (
+          <div className="flex gap-2">
+            <PaymentButton
+              appointmentId={appointment.id}
+              amount={1500}
+              provider="yookassa"
+            />
+            {appointment.status === 'confirmed' && (
+              <Link
+                href={`/video/${appointment.id}`}
+                className="flex-1 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 rounded-lg text-sm transition-all text-center"
+              >
+                📹 Видеоконсультация
+              </Link>
+            )}
+          </div>
         )}
       </div>
 

@@ -54,14 +54,25 @@ export default function PushNotificationManager() {
 
   const subscribeToPush = async () => {
     try {
-      const registration = await navigator.serviceWorker.ready;
+      // Register Service Worker if not registered
+      let registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        registration = await navigator.serviceWorker.register('/sw.js');
+        console.log('Service Worker registered');
+      }
 
-      // Convert VAPID public key to Uint8Array
-      // This is a placeholder - in production, generate keys using web-push
-      const vapidPublicKey =
-        'BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8-fTt3aIVLR1VKd2TfkTyNGH8p5z6i5d5w5x8WjzaU5j5p5y5e5r5y5';
+      await navigator.serviceWorker.ready;
 
-      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+      // Get VAPID public key from server
+      const keyResponse = await fetch('/api/push/subscribe');
+      const { publicKey } = await keyResponse.json();
+
+      if (!publicKey) {
+        console.error('VAPID public key not available');
+        return;
+      }
+
+      const convertedVapidKey = urlBase64ToUint8Array(publicKey);
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -70,13 +81,22 @@ export default function PushNotificationManager() {
 
       setSubscription(subscription);
 
-      // Send subscription to server
+      // Send subscription to server with proper format
       await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(subscription),
+        body: JSON.stringify({
+          userId: '1', // TODO: Get actual user ID from session
+          subscription: {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: arrayBufferToBase64(subscription.getKey('p256dh')!),
+              auth: arrayBufferToBase64(subscription.getKey('auth')!),
+            },
+          },
+        }),
       });
 
       console.log('Push subscription successful:', subscription);
@@ -213,7 +233,7 @@ export default function PushNotificationManager() {
   );
 }
 
-// Helper function to convert VAPID key
+// Helper functions
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -225,4 +245,13 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
 }

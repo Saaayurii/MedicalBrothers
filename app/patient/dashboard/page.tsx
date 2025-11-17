@@ -8,6 +8,7 @@ import AppointmentCard from '@/components/AppointmentCard';
 import PatientReviews from '@/components/patient/Reviews';
 import PatientMedicalRecords from '@/components/patient/MedicalRecords';
 import LoyaltyPoints from '@/components/patient/LoyaltyPoints';
+import PushNotificationsToggle from '@/components/patient/PushNotificationsToggle';
 
 async function getPatientData(patientId: number) {
   noStore();
@@ -150,6 +151,11 @@ export default async function PatientDashboardPage() {
               >
                 Записаться на приём
               </Link>
+            </div>
+
+            {/* Push Notifications */}
+            <div className="cyber-card p-4 sm:p-6 mt-4 sm:mt-6">
+              <PushNotificationsToggle userId={patient.id.toString()} />
             </div>
           </div>
 
