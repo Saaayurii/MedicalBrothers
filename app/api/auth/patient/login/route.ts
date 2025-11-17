@@ -78,7 +78,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Создаем сессию
+    // Check if 2FA is enabled
+    if (patient.twoFactorEnabled) {
+      // Return a special response indicating 2FA is required
+      return NextResponse.json({
+        requires2FA: true,
+        userId: patient.id,
+        userType: 'patient',
+        message: 'Введите код двухфакторной аутентификации',
+      });
+    }
+
+    // Создаем сессию (если 2FA не включена)
     await createPatientSession(patient.id);
 
     return NextResponse.json({
