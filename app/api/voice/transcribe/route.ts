@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@deepgram/sdk';
 
-const deepgram = createClient(process.env.DEEPGRAM_API_KEY || '');
-
 export async function POST(request: NextRequest) {
   try {
     // Check if API key is configured
@@ -12,6 +10,9 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Initialize Deepgram client with API key
+    const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
@@ -61,9 +62,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

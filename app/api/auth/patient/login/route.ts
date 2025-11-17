@@ -13,8 +13,8 @@ const loginSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting for auth endpoints
-    const identifier = getClientIdentifier(request);
-    const rateLimitResult = rateLimit(identifier, RateLimitPresets.AUTH);
+    const clientId = getClientIdentifier(request);
+    const rateLimitResult = rateLimit(clientId, RateLimitPresets.AUTH);
 
     if (!rateLimitResult.success) {
       return NextResponse.json(

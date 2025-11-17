@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 import { verifyPassword, createSession, destroySession, getSession } from '@/lib/auth';
 import { createAuditLog, AuditAction, AuditEntity } from '@/lib/audit';
 import { getClientInfo } from '@/lib/audit-helpers';
-import { checkRateLimit, authRateLimit, getClientIdentifier } from '@/lib/rate-limit';
+import { rateLimit, RateLimitPresets, getClientIdentifier } from '@/lib/rate-limit';
 import { logSuspiciousActivity } from '@/lib/security';
 
 export interface LoginResult {
@@ -29,18 +29,18 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     // Check rate limit
     const headersList = await headers();
     const identifier = getClientIdentifier(headersList);
-    const rateLimit = await checkRateLimit(identifier, authRateLimit);
+    const rateLimitResult = rateLimit(identifier, RateLimitPresets.AUTH);
 
-    if (!rateLimit.success) {
+    if (!rateLimitResult.success) {
       await logSuspiciousActivity('failed_login', {
         username,
         reason: 'rate_limit_exceeded',
-        remaining: rateLimit.remaining,
+        remaining: rateLimitResult.remaining,
       });
 
       return {
         success: false,
-        error: `Слишком много попыток входа. Попробуйте через ${Math.ceil((rateLimit.reset - Date.now()) / 1000 / 60)} минут`,
+        error: `Слишком много попыток входа. Попробуйте через ${Math.ceil((rateLimitResult.reset - Date.now()) / 1000 / 60)} минут`,
       };
     }
 

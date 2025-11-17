@@ -61,13 +61,18 @@ export function rateLimit(
 }
 
 /**
- * Get client identifier from request
+ * Get client identifier from request or headers
  * Uses IP address or fallback to 'anonymous'
  */
-export function getClientIdentifier(request: NextRequest): string {
+export function getClientIdentifier(requestOrHeaders: NextRequest | Headers): string {
+  // Get headers object from NextRequest or use directly
+  const headers = requestOrHeaders instanceof Headers
+    ? requestOrHeaders
+    : requestOrHeaders.headers;
+
   // Try to get IP from headers (works with proxies)
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const realIp = request.headers.get('x-real-ip');
+  const forwardedFor = headers.get('x-forwarded-for');
+  const realIp = headers.get('x-real-ip');
 
   if (forwardedFor) {
     return forwardedFor.split(',')[0].trim();
