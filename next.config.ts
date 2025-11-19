@@ -1,7 +1,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  cacheComponents: true, // Partial Prerendering (Next.js 16)
+  // Note: cacheComponents (Partial Prerendering) is disabled because
+  // it's incompatible with dynamic API routes that use runtime/dynamic configs
+  // (SSE streams, real-time health checks, file uploads, analytics)
+  cacheComponents: false,
   typescript: {
     ignoreBuildErrors: false,
   },
