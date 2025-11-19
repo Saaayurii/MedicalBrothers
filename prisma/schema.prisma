@@ -87,6 +87,17 @@ model Patient {
   medicalHistory String?  @map("medical_history") @db.Text
   isActive       Boolean  @default(true) @map("is_active")
   lastLoginAt    DateTime? @map("last_login_at") @db.Timestamp(6)
+
+  // Email verification fields
+  emailVerified            Boolean   @default(false) @map("email_verified")
+  emailVerificationToken   String?   @map("email_verification_token") @db.VarChar(255)
+  emailVerificationExpiry  DateTime? @map("email_verification_expiry") @db.Timestamp(6)
+
+  // Two-factor authentication fields
+  twoFactorSecret          String?   @map("two_factor_secret") @db.VarChar(255)
+  twoFactorEnabled         Boolean   @default(false) @map("two_factor_enabled")
+  twoFactorBackupCodes     String?   @map("two_factor_backup_codes") @db.Text // JSON array
+
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
@@ -98,10 +109,12 @@ model Patient {
   labOrders           LabOrder[]
   loyaltyPoints       LoyaltyPoints?
   pointsTransactions  PointsTransaction[]
+  pushSubscriptions   PushSubscription[]
 
   @@index([email])
   @@index([phone])
   @@index([isActive])
+  @@index([emailVerificationToken])
   @@map("patients")
 }
 
@@ -215,10 +228,17 @@ model Admin {
   doctorId     Int?     @map("doctor_id") // Link to doctor if role is doctor
   isActive     Boolean  @default(true) @map("is_active")
   lastLoginAt  DateTime? @map("last_login_at") @db.Timestamp(6)
+
+  // Two-factor authentication fields
+  twoFactorSecret      String?  @map("two_factor_secret") @db.VarChar(255)
+  twoFactorEnabled     Boolean  @default(false) @map("two_factor_enabled")
+  twoFactorBackupCodes String?  @map("two_factor_backup_codes") @db.Text // JSON array
+
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
-  auditLogs    AuditLog[]
+  auditLogs         AuditLog[]
+  pushSubscriptions PushSubscription[]
 
   @@index([email])
   @@index([username])
@@ -382,4 +402,22 @@ model PointsTransaction {
   @@index([patientId])
   @@index([createdAt])
   @@map("points_transactions")
+}
+
+// Push Notification Subscriptions
+model PushSubscription {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  userType   String   @map("user_type") // 'patient' or 'admin'
+  endpoint   String   @unique @db.Text
+  p256dh     String   @db.Text
+  auth       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  patient    Patient? @relation(fields: [userId], references: [id], onDelete: Cascade, map: "push_subscriptions_patient_fkey")
+  admin      Admin?   @relation(fields: [userId], references: [id], onDelete: Cascade, map: "push_subscriptions_admin_fkey")
+
+  @@index([userId, userType])
+  @@index([endpoint])
+  @@map("push_subscriptions")
 }

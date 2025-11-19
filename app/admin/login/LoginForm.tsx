@@ -19,6 +19,9 @@ export default function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [twoFAData, setTwoFAData] = useState<{ userId: number; userType: string } | null>(null);
+  const [twoFAToken, setTwoFAToken] = useState('');
 
   const {
     register,
@@ -37,11 +40,14 @@ export default function LoginForm() {
       formData.append('username', data.username);
       formData.append('password', data.password);
 
-      const result = await loginAction(formData);
+      const result: any = await loginAction(formData);
 
       if (result.success) {
         router.push('/admin');
         router.refresh();
+      } else if (result.error === 'requires_2fa' && result.requires2FA) {
+        setShow2FA(true);
+        setTwoFAData({ userId: result.userId, userType: result.userType });
       } else {
         setError(result.error || 'Ошибка входа');
       }
@@ -52,6 +58,100 @@ export default function LoginForm() {
       setIsLoading(false);
     }
   };
+
+  const onSubmit2FA = async () => {
+    if (!twoFAData || !twoFAToken) {
+      setError('Введите код аутентификации');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/2fa/complete-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: twoFAData.userId,
+          userType: twoFAData.userType,
+          token: twoFAToken,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Неверный код');
+      }
+
+      router.push('/admin');
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || 'Ошибка проверки кода');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (show2FA) {
+    return (
+      <div className="space-y-6">
+        {/* Общая ошибка */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
+        <h3 className="text-xl font-bold text-center">Двухфакторная аутентификация</h3>
+        <p className="text-sm text-gray-400 text-center">
+          Введите 6-значный код из вашего приложения-аутентификатора
+        </p>
+
+        {/* 2FA Token */}
+        <div>
+          <label htmlFor="twoFAToken" className="block text-sm font-medium mb-2">
+            Код аутентификации
+          </label>
+          <input
+            id="twoFAToken"
+            type="text"
+            value={twoFAToken}
+            onChange={(e) => setTwoFAToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            maxLength={6}
+            placeholder="000000"
+            disabled={isLoading}
+            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-center text-2xl tracking-widest"
+          />
+        </div>
+
+        {/* Кнопки */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShow2FA(false)}
+            disabled={isLoading}
+            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg transition-colors disabled:opacity-50"
+          >
+            Назад
+          </button>
+          <button
+            onClick={onSubmit2FA}
+            disabled={isLoading || twoFAToken.length !== 6}
+            className={`flex-1 neon-button py-3 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isLoading ? 'Проверка...' : 'Подтвердить'}
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-500 text-center">
+          Потеряли доступ? Используйте резервный код
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

@@ -2,6 +2,103 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPayment, PaymentProvider } from '@/lib/payments';
 import prisma from '@/lib/prisma';
 
+/**
+ * @swagger
+ * /api/payment/create:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Create payment for appointment
+ *     description: |
+ *       Create a payment transaction using Stripe or YooKassa.
+ *
+ *       Supported providers:
+ *       - stripe: International payments (USD, EUR, etc.)
+ *       - yookassa: Russian payments (RUB)
+ *
+ *       Returns payment URL for redirect-based flow or clientSecret for Stripe Elements.
+ *       Amount is automatically converted to smallest currency unit (kopeks/cents).
+ *     operationId: createPayment
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - provider
+ *               - appointmentId
+ *               - amount
+ *             properties:
+ *               provider:
+ *                 type: string
+ *                 enum: [stripe, yookassa]
+ *                 description: Payment provider
+ *                 example: yookassa
+ *               appointmentId:
+ *                 type: integer
+ *                 description: Appointment ID for payment
+ *                 example: 5
+ *               amount:
+ *                 type: number
+ *                 description: Payment amount in major currency units
+ *                 example: 2500
+ *               currency:
+ *                 type: string
+ *                 enum: [rub, usd, eur]
+ *                 default: rub
+ *                 description: Payment currency
+ *                 example: rub
+ *               description:
+ *                 type: string
+ *                 description: Payment description (optional)
+ *                 example: "Консультация кардиолога"
+ *     responses:
+ *       200:
+ *         description: Payment created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 paymentId:
+ *                   type: string
+ *                   description: Payment ID from provider
+ *                   example: "2d92c8cd-000f-5000-9000-1b7f65e5c7aa"
+ *                 status:
+ *                   type: string
+ *                   description: Payment status
+ *                   example: pending
+ *                 paymentUrl:
+ *                   type: string
+ *                   description: Redirect URL for payment (YooKassa)
+ *                   example: "https://yoomoney.ru/checkout/payments/v2/..."
+ *                 clientSecret:
+ *                   type: string
+ *                   description: Client secret for Stripe Elements
+ *                   example: "pi_1234_secret_5678"
+ *       400:
+ *         description: Missing required fields or invalid provider
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               missingFields:
+ *                 summary: Missing required fields
+ *                 value:
+ *                   error: "Missing required fields: provider, appointmentId, amount"
+ *               invalidProvider:
+ *                 summary: Invalid payment provider
+ *                 value:
+ *                   error: 'Invalid payment provider. Use "stripe" or "yookassa"'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

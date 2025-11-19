@@ -27,6 +27,97 @@ const MEDICAL_SYSTEM_PROMPT = `Вы - медицинский AI ассистен
 
 Часы работы: Пн-Пт 8:00-20:00, Сб-Вс 9:00-18:00`;
 
+/**
+ * @swagger
+ * /api/ai/chat:
+ *   post:
+ *     tags:
+ *       - AI & Voice
+ *     summary: Chat with Ollama AI (Qwen 2.5)
+ *     description: |
+ *       AI-powered medical consultation using locally hosted Ollama with Qwen 2.5 model.
+ *
+ *       Features:
+ *       - Medical symptom analysis
+ *       - Doctor specialty recommendations
+ *       - Clinic information
+ *       - Appointment booking guidance
+ *
+ *       Limitations:
+ *       - No diagnosis - only recommendations
+ *       - Rate limited: 100 requests/minute
+ *       - Requires Ollama service running
+ *     operationId: aiChat
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 description: User's message/question
+ *                 example: "У меня болит голова и температура 38"
+ *               conversationHistory:
+ *                 type: array
+ *                 description: Previous conversation context (optional)
+ *                 items:
+ *                   $ref: '#/components/schemas/AIMessage'
+ *                 example:
+ *                   - role: user
+ *                     content: "Здравствуйте"
+ *                   - role: assistant
+ *                     content: "Здравствуйте! Чем могу помочь?"
+ *     responses:
+ *       200:
+ *         description: AI response generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   type: string
+ *                   description: AI assistant's response
+ *                   example: "Головная боль и температура 38°C могут быть признаками простуды или ОРВИ. Рекомендую записаться к терапевту для осмотра."
+ *                 model:
+ *                   type: string
+ *                   description: AI model used
+ *                   example: "qwen2.5:7b"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-15T10:30:00.000Z"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Превышен лимит запросов
+ *                 retryAfter:
+ *                   type: integer
+ *                   example: 60
+ *       503:
+ *         description: Ollama service unavailable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               error: Ollama service is not available
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting

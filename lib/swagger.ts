@@ -64,7 +64,7 @@ API requests are rate-limited to prevent abuse:
       tags: [
         {
           name: 'Authentication',
-          description: 'Admin and patient authentication endpoints',
+          description: 'Admin and patient authentication endpoints (register, login, logout)',
         },
         {
           name: 'Patients',
@@ -72,27 +72,55 @@ API requests are rate-limited to prevent abuse:
         },
         {
           name: 'Doctors',
-          description: 'Doctor profiles and schedules',
+          description: 'Doctor profiles, schedules, and online status',
         },
         {
           name: 'Appointments',
           description: 'Appointment booking and management',
         },
         {
-          name: 'Consultations',
-          description: 'AI-powered medical consultations',
+          name: 'AI & Voice',
+          description: 'AI chat consultations and voice processing (STT, TTS)',
         },
         {
-          name: 'Emergency',
-          description: 'Emergency call handling',
+          name: 'Medical Records',
+          description: 'Electronic Health Records (EHR) - diagnoses, prescriptions, lab results',
+        },
+        {
+          name: 'Lab Orders',
+          description: 'Laboratory test ordering and result management',
+        },
+        {
+          name: 'Reviews',
+          description: 'Doctor reviews and ratings system',
+        },
+        {
+          name: 'Loyalty',
+          description: 'Loyalty points program and rewards',
+        },
+        {
+          name: 'Reminders',
+          description: 'Appointment reminders via email, SMS, and push',
+        },
+        {
+          name: 'Payments',
+          description: 'Payment processing (Stripe, YooKassa) and webhooks',
         },
         {
           name: 'Push Notifications',
-          description: 'Push notification subscription management',
+          description: 'Web Push API subscription and notification delivery',
+        },
+        {
+          name: 'Notifications',
+          description: 'Real-time notification streaming (Server-Sent Events)',
         },
         {
           name: 'Analytics',
-          description: 'Reports and analytics',
+          description: 'System metrics, reports, and vital statistics',
+        },
+        {
+          name: 'System',
+          description: 'Health checks, file uploads, CSRF tokens, and cron jobs',
         },
         {
           name: 'Admin',
@@ -165,6 +193,185 @@ API requests are rate-limited to prevent abuse:
               success: { type: 'boolean', example: true },
               message: { type: 'string' },
               data: { type: 'object' },
+            },
+          },
+          MedicalRecord: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              patientId: { type: 'integer' },
+              doctorId: { type: 'integer', nullable: true },
+              appointmentId: { type: 'integer', nullable: true },
+              recordType: {
+                type: 'string',
+                enum: ['diagnosis', 'prescription', 'lab_result', 'imaging', 'note'],
+              },
+              title: { type: 'string' },
+              description: { type: 'string' },
+              diagnosis: { type: 'string', nullable: true },
+              prescription: { type: 'string', nullable: true },
+              labResults: { type: 'string', nullable: true },
+              attachments: { type: 'array', items: { type: 'string' }, nullable: true },
+              isConfidential: { type: 'boolean' },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+          LabOrder: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              patientId: { type: 'integer' },
+              doctorId: { type: 'integer' },
+              testName: { type: 'string' },
+              testCode: { type: 'string', nullable: true },
+              priority: {
+                type: 'string',
+                enum: ['routine', 'urgent', 'stat'],
+                default: 'routine',
+              },
+              status: {
+                type: 'string',
+                enum: ['pending', 'processing', 'completed', 'failed'],
+                default: 'pending',
+              },
+              instructions: { type: 'string', nullable: true },
+              results: { type: 'string', nullable: true },
+              resultFiles: { type: 'array', items: { type: 'string' }, nullable: true },
+              orderedAt: { type: 'string', format: 'date-time' },
+              completedAt: { type: 'string', format: 'date-time', nullable: true },
+            },
+          },
+          Review: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              doctorId: { type: 'integer' },
+              patientId: { type: 'integer' },
+              appointmentId: { type: 'integer', nullable: true },
+              rating: { type: 'integer', minimum: 1, maximum: 5 },
+              comment: { type: 'string', nullable: true },
+              isVerified: { type: 'boolean' },
+              createdAt: { type: 'string', format: 'date-time' },
+            },
+          },
+          LoyaltyPoints: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              patientId: { type: 'integer' },
+              totalPoints: { type: 'integer' },
+              availablePoints: { type: 'integer' },
+              tier: {
+                type: 'string',
+                enum: ['bronze', 'silver', 'gold', 'platinum'],
+                default: 'bronze',
+              },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+          PointsTransaction: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              loyaltyPointsId: { type: 'integer' },
+              points: { type: 'integer' },
+              type: {
+                type: 'string',
+                enum: ['earned', 'redeemed', 'expired', 'adjusted'],
+              },
+              reason: { type: 'string' },
+              referenceType: { type: 'string', nullable: true },
+              referenceId: { type: 'integer', nullable: true },
+              createdAt: { type: 'string', format: 'date-time' },
+            },
+          },
+          Reminder: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              appointmentId: { type: 'integer' },
+              type: {
+                type: 'string',
+                enum: ['email', 'sms', 'push'],
+              },
+              scheduledFor: { type: 'string', format: 'date-time' },
+              status: {
+                type: 'string',
+                enum: ['pending', 'sent', 'failed'],
+                default: 'pending',
+              },
+              sentAt: { type: 'string', format: 'date-time', nullable: true },
+              createdAt: { type: 'string', format: 'date-time' },
+            },
+          },
+          Payment: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              amount: { type: 'number' },
+              currency: { type: 'string', enum: ['RUB', 'USD'] },
+              status: {
+                type: 'string',
+                enum: ['pending', 'succeeded', 'failed', 'canceled'],
+              },
+              provider: { type: 'string', enum: ['stripe', 'yookassa'] },
+              paymentUrl: { type: 'string', nullable: true },
+              metadata: { type: 'object' },
+              createdAt: { type: 'string', format: 'date-time' },
+            },
+          },
+          AIMessage: {
+            type: 'object',
+            properties: {
+              role: { type: 'string', enum: ['user', 'assistant', 'system'] },
+              content: { type: 'string' },
+            },
+          },
+          AIResponse: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+              metadata: {
+                type: 'object',
+                properties: {
+                  symptoms: { type: 'array', items: { type: 'string' } },
+                  recommendedSpecialty: { type: 'string', nullable: true },
+                  severity: { type: 'string', enum: ['low', 'medium', 'high', 'emergency'] },
+                  appointmentSuggested: { type: 'boolean' },
+                },
+              },
+            },
+          },
+          HealthCheck: {
+            type: 'object',
+            properties: {
+              status: { type: 'string', enum: ['healthy', 'degraded', 'unhealthy'] },
+              timestamp: { type: 'string', format: 'date-time' },
+              uptime: { type: 'number' },
+              version: { type: 'string' },
+              services: {
+                type: 'object',
+                properties: {
+                  database: { type: 'string', enum: ['up', 'down'] },
+                  redis: { type: 'string', enum: ['up', 'down'] },
+                },
+              },
+            },
+          },
+          PushSubscription: {
+            type: 'object',
+            properties: {
+              endpoint: { type: 'string' },
+              keys: {
+                type: 'object',
+                properties: {
+                  p256dh: { type: 'string' },
+                  auth: { type: 'string' },
+                },
+              },
             },
           },
         },
