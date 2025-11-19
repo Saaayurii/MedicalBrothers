@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       backupCodeUsed,
       user: {
         id: user.id,
-        name: userType === 'admin' ? user.username : user.name,
+        name: 'username' in user ? user.username : user.name,
         email: user.email,
       },
     });
