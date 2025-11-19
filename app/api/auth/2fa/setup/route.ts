@@ -27,10 +27,10 @@ export async function POST(request: NextRequest) {
     const secret = generate2FASecret(email);
 
     // Generate QR code
-    const qrCode = await generate2FAQRCode(secret.otpauth_url);
+    const qrCode = await generate2FAQRCode(secret.otpauthUrl!);
 
     return NextResponse.json({
-      secret: secret.base32,
+      secret: secret.secret,
       qrCode,
       userType,
     });
