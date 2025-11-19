@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const verificationURL = generateVerificationURL(baseUrl, token);
 
     // Send verification email
-    await sendVerificationEmail(patient.email, patient.name || 'User', verificationURL);
+    await sendVerificationEmail(patient.email, verificationURL);
 
     return NextResponse.json({
       success: true,
