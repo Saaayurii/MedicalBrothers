@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import PWAInstaller from '@/components/PWAInstaller';
 import PushNotificationManager from '@/components/PushNotificationManager';
+import MobileNavBar from '@/components/MobileNavBar';
 
 export const metadata: Metadata = {
   title: {
@@ -57,7 +58,10 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className="antialiased">
-        {children}
+        <div className="has-mobile-nav">
+          {children}
+        </div>
+        <MobileNavBar />
         <PWAInstaller />
         <PushNotificationManager />
       </body>

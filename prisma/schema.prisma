@@ -414,8 +414,8 @@ model PushSubscription {
   auth       String   @db.Text
   createdAt  DateTime @default(now()) @map("created_at")
 
-  patient    Patient? @relation(fields: [userId], references: [id], onDelete: Cascade)
-  admin      Admin?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient    Patient? @relation(fields: [userId], references: [id], onDelete: Cascade, map: "push_subscriptions_patient_fkey")
+  admin      Admin?   @relation(fields: [userId], references: [id], onDelete: Cascade, map: "push_subscriptions_admin_fkey")
 
   @@index([userId, userType])
   @@index([endpoint])

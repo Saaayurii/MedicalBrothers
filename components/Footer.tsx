@@ -55,7 +55,7 @@ export default function Footer() {
               <li className="flex items-start gap-2">
                 <span className="text-cyan-500">📞</span>
                 <div>
-                  <div className="font-semibold text-white">+7 (800) 123-45-67</div>
+                  <div className="font-semibold text-white">+7 (949) 999-99-99</div>
                   <div className="text-xs">Круглосуточно</div>
                 </div>
               </li>
@@ -69,8 +69,8 @@ export default function Footer() {
               <li className="flex items-start gap-2">
                 <span className="text-cyan-500">📍</span>
                 <div>
-                  <div className="font-semibold text-white">г. Москва</div>
-                  <div className="text-xs">ул. Медицинская, д. 10</div>
+                  <div className="font-semibold text-white">г. Донецк</div>
+                  <div className="text-xs">пр-кт Ильича, д.14</div>
                 </div>
               </li>
             </ul>

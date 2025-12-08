@@ -53,7 +53,7 @@ export default function GlobalError({
             </button>
 
             <div className="mt-8 text-sm text-gray-500">
-              <p>Техподдержка: <span className="text-cyan-400">+7 (800) 123-45-67</span></p>
+              <p>Техподдержка: <span className="text-cyan-400">+7 (949) 99-99-99</span></p>
             </div>
           </div>
         </main>

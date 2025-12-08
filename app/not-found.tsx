@@ -44,7 +44,7 @@ export default function NotFound() {
 
         {/* Help Text */}
         <div className="mt-12 text-sm text-gray-500">
-          <p>Нужна помощь? Позвоните нам: <span className="text-cyan-400">+7 (800) 123-45-67</span></p>
+          <p>Нужна помощь? Позвоните нам: <span className="text-cyan-400">+7 (949) 999-99-99</span></p>
         </div>
 
         {/* Decorative Elements */}

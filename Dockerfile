@@ -6,9 +6,9 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Copy node_modules directly (faster, avoids network issues)
+COPY node_modules ./node_modules
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -16,8 +16,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Prisma Client is already generated locally and copied with node_modules
+# RUN npx prisma generate
 
 # Environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1

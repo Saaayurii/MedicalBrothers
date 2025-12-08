@@ -396,7 +396,7 @@ async function main() {
       data: {
         category: 'contact',
         question: 'Как с вами связаться?',
-        answer: 'Телефон: +7 (800) 123-45-67, Email: info@medicalbrothers.ru, Адрес: г. Москва, ул. Медицинская, д. 10',
+        answer: 'Телефон: +7 (949) 99-99-99, Email: info@medicalbrothers.ru, Адрес: г. Москва, ул. Медицинская, д. 10',
         displayOrder: 6,
       },
     }),

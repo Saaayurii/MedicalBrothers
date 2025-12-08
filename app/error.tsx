@@ -78,7 +78,7 @@ export default function Error({
         <div className="mt-12 text-sm text-gray-500">
           <p>Проблема не решается? Свяжитесь с нами:</p>
           <p className="mt-2">
-            📞 <span className="text-cyan-400">+7 (800) 123-45-67</span>
+            📞 <span className="text-cyan-400">+7 (949) 99-99-99</span>
             {' • '}
             ✉️ <span className="text-cyan-400">support@medicalbrothers.ru</span>
           </p>

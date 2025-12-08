@@ -119,3 +119,19 @@
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
+
+/* Safe area for mobile bottom navigation */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Add padding to main content when mobile nav is visible */
+.has-mobile-nav {
+  padding-bottom: 80px;
+}
+
+@media (min-width: 768px) {
+  .has-mobile-nav {
+    padding-bottom: 0;
+  }
+}

@@ -83,7 +83,7 @@ export default function FAQSection() {
           href="tel:+78001234567"
           className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/50 rounded-xl transition-all"
         >
-          📞 Позвоните нам: +7 (800) 123-45-67
+          📞 Позвоните нам: +7 (949) 99-99-99
         </a>
       </div>
     </section>
