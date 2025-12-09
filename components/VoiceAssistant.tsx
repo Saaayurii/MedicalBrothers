@@ -23,9 +23,24 @@ export default function VoiceAssistant({
 }: VoiceAssistantProps) {
   const [transcript, setTranscript] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
+    // Check microphone permission status
+    if (typeof navigator !== 'undefined' && navigator.permissions) {
+      navigator.permissions.query({ name: 'microphone' as PermissionName }).then((result) => {
+        setPermissionStatus(result.state as 'granted' | 'denied' | 'prompt');
+        result.onchange = () => {
+          setPermissionStatus(result.state as 'granted' | 'denied' | 'prompt');
+        };
+      }).catch(() => {
+        // Some browsers don't support microphone permission query
+        setPermissionStatus('unknown');
+      });
+    }
+
     // Initialize Speech Recognition
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
@@ -45,8 +60,28 @@ export default function VoiceAssistant({
       };
 
       recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
         setIsListening(false);
+
+        switch (event.error) {
+          case 'not-allowed':
+            setErrorMessage('Доступ к микрофону запрещён. Пожалуйста, разрешите доступ в настройках браузера.');
+            setPermissionStatus('denied');
+            break;
+          case 'no-speech':
+            setErrorMessage('Речь не обнаружена. Попробуйте ещё раз.');
+            break;
+          case 'audio-capture':
+            setErrorMessage('Микрофон не найден. Проверьте подключение микрофона.');
+            break;
+          case 'network':
+            setErrorMessage('Ошибка сети. Проверьте подключение к интернету.');
+            break;
+          case 'aborted':
+            // User aborted, no need to show error
+            break;
+          default:
+            setErrorMessage(`Ошибка распознавания: ${event.error}`);
+        }
       };
 
       recognitionRef.current.onend = () => {
@@ -55,11 +90,44 @@ export default function VoiceAssistant({
     }
   }, []);
 
-  const startListening = () => {
-    if (recognitionRef.current) {
+  const requestMicrophonePermission = async (): Promise<boolean> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop all tracks after getting permission
+      stream.getTracks().forEach(track => track.stop());
+      setPermissionStatus('granted');
+      setErrorMessage(null);
+      return true;
+    } catch (error) {
+      setPermissionStatus('denied');
+      setErrorMessage('Доступ к микрофону запрещён. Пожалуйста, разрешите доступ в настройках браузера.');
+      return false;
+    }
+  };
+
+  const startListening = async () => {
+    if (!recognitionRef.current) return;
+
+    setErrorMessage(null);
+
+    // Request permission if not granted
+    if (permissionStatus !== 'granted') {
+      const granted = await requestMicrophonePermission();
+      if (!granted) return;
+    }
+
+    try {
       setTranscript('');
       setIsListening(true);
       recognitionRef.current.start();
+    } catch (error: any) {
+      setIsListening(false);
+      if (error.message?.includes('already started')) {
+        // Recognition already running, stop and restart
+        recognitionRef.current.stop();
+      } else {
+        setErrorMessage('Не удалось запустить распознавание речи.');
+      }
     }
   };
 
@@ -162,6 +230,26 @@ export default function VoiceAssistant({
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
             <p className="text-sm text-cyan-400">Помощник говорит...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 mt-4">
+          <div className="flex items-start gap-2">
+            <span className="text-red-400">⚠️</span>
+            <div>
+              <p className="text-sm text-red-400">{errorMessage}</p>
+              {permissionStatus === 'denied' && (
+                <button
+                  onClick={requestMicrophonePermission}
+                  className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 underline"
+                >
+                  Попробовать снова
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

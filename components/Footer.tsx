@@ -140,7 +140,7 @@ export default function Footer() {
               Powered by{' '}
               <span className="text-cyan-400 font-semibold">Next.js 16</span>
               {' & '}
-              <span className="text-purple-400 font-semibold">Qwen AI</span>
+              <span className="text-purple-400 font-semibold">Медицинский AI</span>
             </div>
           </div>
         </div>

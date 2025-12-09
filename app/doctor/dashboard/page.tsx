@@ -10,6 +10,8 @@ import CreateLabOrder from '@/components/doctor/CreateLabOrder';
 import ReviewsView from '@/components/doctor/ReviewsView';
 import NotificationCenter from '@/components/NotificationCenter';
 import { DoctorHeartbeat } from '@/components/DoctorOnlineIndicator';
+import Footer from '@/components/Footer';
+import DoctorHeader from '@/components/DoctorHeader';
 
 async function getDoctorData(doctorId: number) {
   noStore();
@@ -221,7 +223,7 @@ export default async function DoctorDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pb-20 md:pb-0">
       {/* Online Status Heartbeat */}
       <DoctorHeartbeat />
 
@@ -229,55 +231,26 @@ export default async function DoctorDashboardPage() {
       <NotificationCenter />
 
       {/* Header */}
-      <header className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <Link
-              href="/"
-              className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
-            >
-              MedicalBrothers
-            </Link>
-            <p className="text-sm text-gray-400 mt-1">Кабинет врача</p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden md:block">
-              <p className="text-white font-semibold">{session.username}</p>
-              <p className="text-sm text-gray-400">{session.email}</p>
-            </div>
-
-            <Link
-              href="/admin"
-              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg transition-all text-sm"
-            >
-              Админ-панель
-            </Link>
-
-            <form action={handleLogout}>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition-all text-sm"
-              >
-                Выход
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <DoctorHeader
+        username={session.username}
+        email={session.email}
+        handleLogout={handleLogout}
+      />
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 max-w-7xl">
         <Suspense
           fallback={
-            <div className="space-y-8">
-              <div className="cyber-card p-6 animate-pulse">Загрузка данных...</div>
+            <div className="space-y-4 sm:space-y-8">
+              <div className="cyber-card p-4 sm:p-6 animate-pulse text-sm sm:text-base">Загрузка данных...</div>
             </div>
           }
         >
           <DoctorContent doctorId={session.doctorId} />
         </Suspense>
       </div>
+
+      <Footer />
     </div>
   );
 }

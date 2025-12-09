@@ -20,6 +20,7 @@ import MedicalRecords from '@/components/admin/MedicalRecords';
 import LabOrders from '@/components/admin/LabOrders';
 import LoyaltyProgram from '@/components/admin/LoyaltyProgram';
 import NotificationCenter from '@/components/NotificationCenter';
+import Footer from '@/components/Footer';
 
 async function getAdminData() {
   noStore(); // Disable caching for this page
@@ -284,6 +285,8 @@ export default async function AdminPage() {
           <AdminContent />
         </Suspense>
       </div>
+
+      <Footer />
     </main>
   );
 }

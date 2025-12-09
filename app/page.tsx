@@ -41,7 +41,7 @@ export default function Home() {
           </p>
           <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-cyan-300/60 mb-6 md:mb-8 px-4">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0"></div>
-            <span className="text-center">Система активна • Работает на AI Qwen 2.5 • Локально</span>
+            <span className="text-center">Система активна • Медицинский ассистент • Локально</span>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center px-4 max-w-md sm:max-w-none mx-auto">
@@ -52,7 +52,7 @@ export default function Home() {
               onClick={() => setShowAIChat(true)}
               className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/40 hover:to-pink-500/40 border border-purple-500/50 text-white font-semibold rounded-xl transition-all inline-block text-center"
             >
-              🤖 AI Чат (Qwen)
+              🤖 Медицинский ассистент
             </button>
             <Link
               href="/appointments"
@@ -128,7 +128,7 @@ export default function Home() {
               <FeatureLink href="/video/test" icon="📹" title="Видео-консультация" />
               <FeatureLink href="/chat/general" icon="💬" title="Чат с врачом" />
               <button onClick={() => setShowAIChat(true)} className="text-left">
-                <FeatureLink href="#" icon="🤖" title="AI Чат (Qwen)" />
+                <FeatureLink href="#" icon="🤖" title="Медицинский ассистент" />
               </button>
               <FeatureLink href="/admin/analytics" icon="📊" title="Аналитика" />
               <FeatureLink href="/admin/audit-logs" icon="📜" title="Журнал аудита" />
@@ -183,7 +183,7 @@ export default function Home() {
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             <TechBadge name="Next.js 16" icon="⚡" color="cyan" />
-            <TechBadge name="Qwen 2.5 AI" icon="🤖" color="purple" />
+            <TechBadge name="Медицинский AI" icon="🤖" color="purple" />
             <TechBadge name="PostgreSQL" icon="🐘" color="blue" />
             <TechBadge name="Prisma ORM" icon="💎" color="green" />
             <TechBadge name="Redis Cache" icon="🔴" color="red" />
@@ -302,7 +302,7 @@ export default function Home() {
       <Footer />
 
       {/* AI Chat Modal */}
-      <Modal isOpen={showAIChat} onClose={() => setShowAIChat(false)} title="🤖 AI Чат с Qwen 2.5">
+      <Modal isOpen={showAIChat} onClose={() => setShowAIChat(false)} title="🤖 Медицинский ассистент">
         <div className="h-[70vh] max-h-[800px]">
           <OllamaChat />
         </div>

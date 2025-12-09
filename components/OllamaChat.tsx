@@ -95,8 +95,8 @@ export default function OllamaChat() {
             <span className="text-xl">🤖</span>
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white">AI Ассистент Qwen</h3>
-            <p className="text-xs text-gray-400">Powered by Ollama (локально)</p>
+            <h3 className="text-base sm:text-lg font-bold text-white">Медицинский ассистент</h3>
+            <p className="text-xs text-gray-400">Локальный AI-помощник</p>
           </div>
         </div>
         {messages.length > 0 && (

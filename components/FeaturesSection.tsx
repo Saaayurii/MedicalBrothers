@@ -9,7 +9,7 @@ export default function FeaturesSection() {
     {
       icon: '🤖',
       title: 'AI консультант',
-      description: 'Интеллектуальная модель Qwen 2.5 анализирует симптомы и дает рекомендации',
+      description: 'Интеллектуальный медицинский ассистент анализирует симптомы и дает рекомендации',
       color: 'purple',
     },
     {

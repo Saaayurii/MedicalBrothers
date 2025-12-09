@@ -22,6 +22,11 @@ export async function getPatientSession(): Promise<PatientSession | null> {
 
     const sessionData = JSON.parse(sessionCookie.value);
 
+    // Проверяем что sessionData.id существует и является числом
+    if (!sessionData || typeof sessionData.id !== 'number') {
+      return null;
+    }
+
     // Проверяем существование пациента
     const patient = await prisma.patient.findUnique({
       where: { id: sessionData.id },
