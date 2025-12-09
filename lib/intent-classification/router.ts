@@ -3,7 +3,7 @@
  *
  * Маршрутизирует запросы в соответствующие системы обработки:
  * 1. AppointmentSystem - Запись на приём
- * 2. ConsultationSystem - Консультация по симптомам
+ * 2. ConsultationSystem - Консультация по симптомам (с Ollama/Qwen)
  * 3. InfoSystem - Справочная информация
  * 4. EmergencySystem - Экстренный вызов
  */
@@ -17,6 +17,7 @@ import {
   InfoIntent,
   EmergencyIntent,
 } from './types';
+import { analyzeSymptoms, classifySymptomUrgency } from '@/lib/medical-ai';
 
 // Типы ответов от систем
 export interface SystemResponse {
@@ -258,6 +259,7 @@ async function handleCheckSlots(
 
 // ========================================
 // СИСТЕМА 2: КОНСУЛЬТАЦИЯ ПО СИМПТОМАМ
+// Использует Ollama + Qwen для анализа
 // ========================================
 
 async function handleConsultation(
@@ -286,12 +288,47 @@ async function handleConsultation(
     };
   }
 
-  // Определяем рекомендуемую специальность
-  const recommendedSpecialty = extractSpecialty(userInput) || determineSpecialtyBySymptoms(symptoms);
+  // Используем Ollama/Qwen для анализа симптомов
+  try {
+    // Формируем историю разговора для контекста
+    const conversationHistory = context.collectedData.conversationHistory || [];
 
-  return {
-    success: true,
-    message: `Я понял ваши симптомы. Вот мои рекомендации:
+    // Получаем AI-анализ симптомов через локальную модель Qwen
+    const aiResponse = await analyzeSymptoms(userInput, conversationHistory);
+
+    // Сохраняем сообщения в контекст
+    context.collectedData.conversationHistory = [
+      ...conversationHistory,
+      { role: 'user' as const, content: userInput },
+      { role: 'assistant' as const, content: aiResponse }
+    ].slice(-10); // Храним последние 10 сообщений
+
+    // Определяем срочность и специальность
+    const urgencyAnalysis = await classifySymptomUrgency(userInput);
+
+    return {
+      success: true,
+      message: aiResponse,
+      data: {
+        symptoms,
+        severity: urgencyAnalysis.urgency,
+        recommendedSpecialty: urgencyAnalysis.specialty,
+        aiAnalyzed: true,
+      },
+      followUp: urgencyAnalysis.urgency !== 'low' ? {
+        question: 'Записать вас к врачу?',
+        options: ['Да, записать', 'Нет, спасибо', 'Задать ещё вопрос'],
+      } : undefined,
+    };
+  } catch (error) {
+    console.error('Error with AI consultation:', error);
+
+    // Fallback на keyword-based ответ
+    const recommendedSpecialty = extractSpecialty(userInput) || determineSpecialtyBySymptoms(symptoms);
+
+    return {
+      success: true,
+      message: `Я понял ваши симптомы. Вот мои рекомендации:
 
 ${generateConsultationAdvice(symptoms, severity)}
 
@@ -299,16 +336,17 @@ ${recommendedSpecialty
     ? `Рекомендую обратиться к ${recommendedSpecialty}. Хотите записаться на приём?`
     : 'Рекомендую проконсультироваться с терапевтом для точной диагностики. Записать вас?'
 }`,
-    data: {
-      symptoms,
-      severity,
-      recommendedSpecialty,
-    },
-    followUp: {
-      question: 'Записать вас к врачу?',
-      options: ['Да, записать', 'Нет, спасибо', 'Узнать больше'],
-    },
-  };
+      data: {
+        symptoms,
+        severity,
+        recommendedSpecialty,
+      },
+      followUp: {
+        question: 'Записать вас к врачу?',
+        options: ['Да, записать', 'Нет, спасибо', 'Узнать больше'],
+      },
+    };
+  }
 }
 
 function determineSpecialtyBySymptoms(symptoms: string[]): string | undefined {
