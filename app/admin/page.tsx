@@ -4,6 +4,7 @@ import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+
 import AppointmentsList from '@/components/admin/AppointmentsList';
 import DoctorsList from '@/components/admin/DoctorsList';
 import EmergencyCalls from '@/components/admin/EmergencyCalls';

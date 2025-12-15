@@ -45,3 +45,12 @@ next-env.d.ts
 *.db
 *.sqlite
 postgres-data/
+
+# python virtual environment (for Piper TTS)
+venv/
+__pycache__/
+*.pyc
+
+# piper TTS models (large files)
+models/*.onnx
+models/*.onnx.json

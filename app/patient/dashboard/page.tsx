@@ -10,6 +10,7 @@ import PatientMedicalRecords from '@/components/patient/MedicalRecords';
 import LoyaltyPoints from '@/components/patient/LoyaltyPoints';
 import PushNotificationsToggle from '@/components/patient/PushNotificationsToggle';
 
+
 async function getPatientData(patientId: number) {
   noStore();
   await connection();

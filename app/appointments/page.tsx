@@ -6,6 +6,7 @@ import AppointmentCard from '@/components/AppointmentCard';
 import Footer from '@/components/Footer';
 import AppointmentsHeader from '@/components/AppointmentsHeader';
 
+
 export default async function AppointmentsPage() {
   noStore();
   await connection();

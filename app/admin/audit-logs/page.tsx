@@ -6,6 +6,7 @@ import { Permission } from '@/lib/roles';
 import { getAuditLogs } from '@/lib/audit';
 import AuditLogViewer from '@/components/admin/AuditLogViewer';
 
+
 export default async function AuditLogsPage() {
   noStore();
   await connection();

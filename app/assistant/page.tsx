@@ -7,7 +7,6 @@ import OllamaChat from '@/components/OllamaChat';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import AssistantHeader from '@/components/AssistantHeader';
-
 interface Message {
   role: 'user' | 'assistant';
   content: string;

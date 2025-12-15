@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { getSession, destroySession } from '@/lib/auth';
+
 import CreateMedicalRecord from '@/components/doctor/CreateMedicalRecord';
 import CreateLabOrder from '@/components/doctor/CreateLabOrder';
 import ReviewsView from '@/components/doctor/ReviewsView';

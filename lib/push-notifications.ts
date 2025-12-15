@@ -6,8 +6,20 @@ const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
 const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@medicalbrothers.com';
 
-if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+// Only set VAPID details if keys are properly configured (not placeholder values)
+const isValidVapidKey = (key: string) => {
+  return key &&
+         key.length > 20 &&
+         !key.includes('your-vapid') &&
+         !key.includes('placeholder');
+};
+
+if (isValidVapidKey(vapidPublicKey) && isValidVapidKey(vapidPrivateKey)) {
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+  } catch (error) {
+    console.warn('Failed to set VAPID details. Push notifications will not work.', error);
+  }
 }
 
 export interface PushSubscription {

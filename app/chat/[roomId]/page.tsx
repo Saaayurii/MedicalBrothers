@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import ChatRoom from '@/components/chat/ChatRoom';
 import { getCurrentUser } from '@/lib/unified-auth';
 
+
 export default async function ChatPage({
   params,
 }: {

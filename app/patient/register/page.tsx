@@ -7,6 +7,7 @@ import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+
 const registerSchema = z.object({
   name: z.string().min(2, 'Минимум 2 символа'),
   email: z.string().email('Некорректный email').optional().or(z.literal('')),

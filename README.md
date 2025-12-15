@@ -101,6 +101,90 @@ npm run dev
 bash scripts/setup-dev.sh
 ```
 
+### Установка Piper TTS (опционально, для лучшей озвучки)
+
+Piper TTS - это **100% бесплатная** альтернатива для голосовой озвучки с высоким качеством.
+
+#### Установка:
+
+1. **Создайте виртуальное окружение и установите Piper:**
+```bash
+# Создание venv
+python3 -m venv venv
+
+# Активация (Linux/Mac)
+source venv/bin/activate
+
+# Установка Piper
+pip install piper-tts
+```
+
+2. **Скачайте русскую модель:**
+```bash
+# Создайте директорию для моделей
+mkdir -p models
+
+# Скачайте модель (выберите один из вариантов):
+
+# Вариант A: Через wget
+cd models
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx.json
+cd ..
+
+# Вариант B: Через curl
+curl -L -o models/ru_RU-ruslan-medium.onnx \
+  https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx
+curl -L -o models/ru_RU-ruslan-medium.onnx.json \
+  https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx.json
+```
+
+3. **Проверьте установку:**
+```bash
+# Активируйте venv (если еще не активировано)
+source venv/bin/activate
+
+# Проверьте, что Piper установлен
+which piper
+
+# Проверьте, что модель скачана
+ls -lh models/ru_RU-ruslan-medium.onnx
+```
+
+4. **Запустите сервер:**
+```bash
+# Piper TTS будет автоматически использован для озвучки
+npm run dev
+```
+
+#### Как это работает:
+
+1. При голосовом запросе система **сначала пытается** использовать Web Speech API (встроенный в браузер)
+2. Если Web Speech API недоступен или не работает, **автоматически переключается** на Piper TTS через endpoint `/api/voice/piper-speak`
+3. Piper генерирует аудио файл (.wav) и отправляет его клиенту
+4. Никаких API ключей не требуется - полностью бесплатно!
+
+#### Преимущества Piper TTS:
+
+✅ **100% бесплатно** - без API ключей, без подписок
+✅ **Высокое качество** - естественная русская речь
+✅ **Работает offline** - не требует интернета
+✅ **Быстрая генерация** - ~1-2 секунды на предложение
+✅ **Приватность** - все данные остаются на вашем сервере
+
+#### Альтернативные модели:
+
+Если хотите попробовать другие русские голоса:
+```bash
+# Женский голос Irina (легкий, быстрый)
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx
+
+# Мужской голос Dmitri (более тяжелый, но качественнее)
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx
+```
+
+Все доступные модели: https://github.com/rhasspy/piper/blob/master/VOICES.md
+
 ### База данных (Prisma)
 
 Проект использует Prisma ORM для типобезопасной работы с PostgreSQL.
@@ -237,9 +321,20 @@ conversation_logs    -- Логи диалогов
 - Режим реального времени
 
 #### Синтез речи (Text-to-Speech)
-- Web Speech Synthesis API
+
+Поддерживается 2 варианта озвучки:
+
+**1. Web Speech Synthesis API (по умолчанию)**
+- Встроенный в браузер TTS
 - Автоматическое озвучивание ответов
 - Настраиваемая скорость и тон
+- Работает без дополнительной настройки
+
+**2. Piper TTS (100% бесплатно, лучшее качество)**
+- Высококачественная русская озвучка
+- Полностью бесплатно (без API ключей)
+- Работает offline
+- Автоматический fallback, если Web Speech API недоступен
 
 ## 🎨 Дизайн
 

@@ -190,7 +190,7 @@ async function main() {
       data: {
         name: 'Алексей Иванов',
         phone: '+79001234567',
-        email: 'patient1@example.com',
+        email: 'cc',
         passwordHash,
         dateOfBirth: new Date('1985-05-15'),
         address: 'г. Москва, ул. Ленина, д. 10, кв. 5',

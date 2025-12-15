@@ -69,6 +69,12 @@ export class OllamaClient {
           model: this.model,
           messages,
           stream: false,
+          options: {
+            temperature: 0.7,      // Lower temperature for more consistent responses
+            top_p: 0.9,           // Nucleus sampling for better quality
+            num_predict: 512,     // Maximum tokens to generate
+            stop: ['中文', '英文', '中国', 'Chinese', 'English'],  // Stop on language switches
+          },
         }),
       });
 

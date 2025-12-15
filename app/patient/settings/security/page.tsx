@@ -4,6 +4,8 @@ import { requirePatientAuth } from '@/lib/patient-auth';
 import prisma from '@/lib/prisma';
 import TwoFactorSetup from '@/components/TwoFactorSetup';
 
+export const dynamic = 'force-dynamic';
+
 async function getPatientData(patientId: number) {
   await connection();
 

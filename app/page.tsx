@@ -12,7 +12,6 @@ import PWAInstaller from '@/components/PWAInstaller';
 import PushNotificationManager from '@/components/PushNotificationManager';
 import OllamaChat from '@/components/OllamaChat';
 import Modal from '@/components/Modal';
-
 export default function Home() {
   const [showAIChat, setShowAIChat] = useState(false);
   const [showAllFeatures, setShowAllFeatures] = useState(false);

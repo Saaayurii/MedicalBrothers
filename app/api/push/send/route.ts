@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPushNotification, sendBulkNotifications, NotificationTemplates } from '@/lib/push-notifications';
 import prisma from '@/lib/prisma';

@@ -3,6 +3,7 @@
 import FileUpload from '@/components/FileUpload';
 import { useState } from 'react';
 
+
 export default function UploadPage() {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string; name: string }>>([]);
 

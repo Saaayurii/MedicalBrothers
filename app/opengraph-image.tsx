@@ -1,7 +1,6 @@
 import { ImageResponse } from 'next/og';
 
 // Make this route dynamic to avoid build-time font fetching issues
-export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
 
 // Image metadata

@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import TwoFactorSetup from '@/components/TwoFactorSetup';
 
+
 async function getAdminData(adminId: number) {
   await connection();
 

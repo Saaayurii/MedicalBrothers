@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import VideoConsultationRoom from '@/components/video/VideoConsultationRoom';
 import { getCurrentUser } from '@/lib/unified-auth';
 
+
 export default async function VideoPage({
   params,
 }: {

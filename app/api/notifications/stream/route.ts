@@ -1,3 +1,4 @@
+
 import { NextRequest } from 'next/server';
 import { notificationEmitter } from '@/lib/events/notification-emitter';
 import { Notification } from '@/lib/types/notification';

@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
